@@ -26,14 +26,8 @@ static void test1(void) {
 "Accept-Language: zh-CN,zh;q=0.8\r\n\r\n";
 
     struct http_request req;
-    if (http_request_init(&req) != 0) {
+    if (http_request_init(&req, get_req, strlen(get_req)) != 0) {
         fprintf(stderr, "http_request_init error\n");
-        return;
-    }
-
-    int err = http_request_parse(&req, get_req, strlen(get_req));
-    if (err) {
-        fprintf(stderr, "parse error: %d\n", err);
         return;
     }
 
@@ -65,14 +59,8 @@ static void test2(void) {
 "text=text1&text=text2&submit=submit";
 
     struct http_request req;
-    if (http_request_init(&req) != 0) {
+    if (http_request_init(&req, post_req, strlen(post_req)) != 0) {
         fprintf(stderr, "http_request_init error\n");
-        return;
-    }
-
-    int err = http_request_parse(&req, post_req, strlen(post_req));
-    if (err) {
-        fprintf(stderr, "parse error: %d\n", err);
         return;
     }
 

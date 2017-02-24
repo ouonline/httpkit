@@ -328,15 +328,14 @@ static void parse_header_line(const char* data, unsigned int len,
     }
     keylen = cursor - data;
 
-    ++cursor;
     while (1) {
+        ++cursor;
         if (cursor >= end) {
             return; /* nothing */
         }
         if (*cursor != ' ') {
             break;
         }
-        ++cursor;
     }
 
     parse_func(data, keylen, cursor, len - (cursor - data), header);
@@ -558,22 +557,21 @@ static int do_pack_response(unsigned int status_code, unsigned int content_type,
 
 /* ------------------------------------------------------------------------- */
 
-int http_request_init(struct http_request* req) {
-    init_request_line(&req->req_line);
-    init_request_header(&req->header);
-    init_qbuf(&req->content);
-    return HRE_SUCCESS;
-}
-
 void http_request_destroy(struct http_request* req) {
     destroy_request_line(&req->req_line);
     destroy_request_header(&req->header);
     destroy_qbuf(&req->content);
 }
 
-int http_request_parse(struct http_request* req, const char* data,
-                       unsigned int len) {
-    int err = parse(data, len, req);
+int http_request_init(struct http_request* req, const char* data,
+                      unsigned int len) {
+    int err;
+
+    init_request_line(&req->req_line);
+    init_request_header(&req->header);
+    init_qbuf(&req->content);
+
+    err = parse(data,len, req);
     if (err) {
         http_request_destroy(req);
     }
@@ -581,16 +579,17 @@ int http_request_parse(struct http_request* req, const char* data,
     return err;
 }
 
-int http_request_get_method(struct http_request* req) {
+int http_request_get_method(const struct http_request* req) {
     return req->req_line.method;
 }
 
-void http_request_get_abs_path(struct http_request* req, struct qbuf_ref* ref) {
+void http_request_get_abs_path(const struct http_request* req,
+                               struct qbuf_ref* ref) {
     ref->base = req->req_line.abs_path.base;
     ref->len = req->req_line.abs_path.len;
 }
 
-int http_request_for_each_option(struct http_request* req, void* arg,
+int http_request_for_each_option(const struct http_request* req, void* arg,
                                  int (*f)(void* arg,
                                           const char* k, unsigned int klen,
                                           const char* v, unsigned int vlen)) {
@@ -611,11 +610,12 @@ int http_request_for_each_option(struct http_request* req, void* arg,
     return HRE_SUCCESS;
 }
 
-unsigned int http_request_get_content_type(struct http_request* req) {
+unsigned int http_request_get_content_type(const struct http_request* req) {
     return req->header.content_type;
 }
 
-void http_request_get_content(struct http_request* req, struct qbuf_ref* ref) {
+void http_request_get_content(const struct http_request* req,
+                              struct qbuf_ref* ref) {
     ref->base = req->content.base;
     ref->len = req->content.len;
 }

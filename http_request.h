@@ -104,21 +104,19 @@ enum {
 
 /* ------------------------------------------------------------------------- */
 
-int http_request_init(struct http_request*);
+int http_request_init(struct http_request*, const char* data,
+                      unsigned int len);
 void http_request_destroy(struct http_request*);
 
-int http_request_parse(struct http_request*, const char* data,
-                       unsigned int len);
-
-int http_request_get_method(struct http_request*);
-void http_request_get_abs_path(struct http_request*, struct qbuf_ref*);
-int http_request_for_each_option(struct http_request*, void* arg,
+int http_request_get_method(const struct http_request*);
+void http_request_get_abs_path(const struct http_request*, struct qbuf_ref*);
+int http_request_for_each_option(const struct http_request*, void* arg,
                                  int (*f)(void* arg,
                                           const char* k, unsigned int klen,
                                           const char* v, unsigned int vlen));
 
-unsigned int http_request_get_content_type(struct http_request*);
-void http_request_get_content(struct http_request*, struct qbuf_ref*);
+unsigned int http_request_get_content_type(const struct http_request*);
+void http_request_get_content(const struct http_request*, struct qbuf_ref*);
 
 /* ----- auxiliary functions ----- */
 
