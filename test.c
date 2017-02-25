@@ -1,4 +1,6 @@
+#include "http_common.h"
 #include "http_request.h"
+#include "http_response.h"
 #include <string.h>
 #include <unistd.h>
 #include <stdio.h>
@@ -36,10 +38,6 @@ static void test1(void) {
     printf("-----------------\n");
     printf("get content type = %d\n", http_request_get_content_type(&req));
 
-    char buf[4096];
-    http_pack_response(HTTP_STATUS_200, HTTP_CONTENT_TYPE_PLAIN,
-                       "abc", 3, buf, sizeof(buf));
-
     http_request_destroy(&req);
 }
 
@@ -73,8 +71,25 @@ static void test2(void) {
     http_request_destroy(&req);
 }
 
+static void test_http_response(void) {
+    struct http_response res;
+    const char* data = "{\"status\": \"ok\"}";
+
+    http_response_init(&res);
+    if (http_response_pack(&res, HTTP_STATUS_200, HTTP_CONTENT_TYPE_JSON,
+                           data, strlen(data)) == 0) {
+        struct qbuf_ref ref;
+        http_response_get_data(&res, &ref);
+        write(1, ref.base, ref.len);
+    } else {
+        printf("pack response failed.\n");
+    }
+    http_response_destroy(&res);
+}
+
 int main(void) {
     test1();
     test2();
+    test_http_response();
     return 0;
 }
