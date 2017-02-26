@@ -1,8 +1,8 @@
 #ifndef __HTTP_REQUEST_H__
 #define __HTTP_REQUEST_H__
 
-#include "list.h"
-#include "qbuf.h"
+#include "utils/list.h"
+#include "utils/qbuf.h"
 
 struct http_request_option {
     struct qbuf key;

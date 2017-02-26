@@ -1,7 +1,7 @@
 #ifndef __HTTP_RESPONSE_H__
 #define __HTTP_RESPONSE_H__
 
-#include "qbuf.h"
+#include "utils/qbuf.h"
 
 struct http_response {
     struct qbuf buf;

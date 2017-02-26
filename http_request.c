@@ -10,7 +10,7 @@
 
 #include "http_common.h"
 #include "http_request.h"
-#include "str_utils.h"
+#include "utils/str_utils.h"
 #include <stdlib.h>
 #include <string.h>
 

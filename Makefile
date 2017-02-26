@@ -8,10 +8,10 @@ endif
 
 CFLAGS := $(CFLAGS) -Wall -Werror -Wextra
 
-INCLUDE := -I../utils
+INCLUDE :=
 LIBS :=
 
-OBJS := $(patsubst %.c, %.o, $(wildcard *.c)) str_utils.o
+OBJS := $(patsubst %.c, %.o, $(wildcard *.c)) utils/str_utils.o
 
 TARGET := http_server
 
@@ -21,9 +21,6 @@ all: $(TARGET)
 
 $(TARGET): $(OBJS)
 	$(CC) $(CFLAGS) -o $@ $^ $(LIBS)
-
-str_utils.o: ../utils/str_utils.c
-	$(CC) $(CFLAGS) $(INCLUDE) -c $< -o $@
 
 .c.o:
 	$(CC) $(CFLAGS) $(INCLUDE) -c $< -o $@
