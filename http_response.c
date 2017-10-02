@@ -54,15 +54,12 @@ static struct qbuf_ref g_http_status_code[] = {
 #define RES_CONTENT_LENGTH     "\r\nServer: ohttpd/0.0.1\r\nContent-Length: "
 #define RES_CONTENT_TYPE       "\r\nContent-Type: "
 #define RES_HEADER_END         "\r\n\r\n"
-#define RES_END                "\r\n"
 #define RES_STATE_LEN          9
-#define RES_CONTENT_LENGTH_LEN 39
+#define RES_CONTENT_LENGTH_LEN 40
 #define RES_CONTENT_TYPE_LEN   16
 #define RES_HEADER_END_LEN     4
-#define RES_END_LEN            2
 #define RES_HEADER_PRELEN      (RES_STATE_LEN + RES_CONTENT_LENGTH_LEN + \
-                                RES_CONTENT_TYPE_LEN + RES_HEADER_END_LEN + \
-                                RES_END_LEN)
+                                RES_CONTENT_TYPE_LEN + RES_HEADER_END_LEN)
 
 int http_response_init(struct http_response* res) {
     qbuf_init(&res->buf);
@@ -118,9 +115,6 @@ static int do_pack_response(unsigned int status_code, unsigned int content_type,
     memcpy(cursor, content, content_len);
     cursor += content_len;
 
-    memcpy(cursor, RES_HEADER_END, RES_HEADER_END_LEN);
-    cursor += RES_HEADER_END_LEN;
-
     return (cursor - buf);
 }
 
@@ -144,20 +138,20 @@ static int get_response_max_size(unsigned int status_code,
 int http_response_pack(struct http_response* res, unsigned int status_code,
                        unsigned int content_type,
                        const char* content, unsigned int content_len) {
-    int datalen = get_response_max_size(status_code, content_type, content_len);
-    if (datalen <= 0) {
-        return datalen;
+    int ret = get_response_max_size(status_code, content_type, content_len);
+    if (ret <= 0) {
+        return ret;
     }
 
-    if (qbuf_resize(&res->buf, datalen) != 0) {
+    if (qbuf_resize(&res->buf, ret) != 0) {
         return HRE_NOMEM;
     }
 
-    datalen = do_pack_response(status_code, content_type, content, content_len, res->buf.base);
-    if (datalen >= 0) {
-        qbuf_resize(&res->buf, datalen);
+    ret = do_pack_response(status_code, content_type, content, content_len, res->buf.base);
+    if (ret >= 0) {
+        qbuf_resize(&res->buf, ret);
         return 0;
     }
 
-    return datalen;
+    return ret;
 }

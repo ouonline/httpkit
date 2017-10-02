@@ -1,5 +1,5 @@
 /**
- * reference:
+ * references:
  * https://tools.ietf.org/html/rfc2616
  * https://tools.ietf.org/html/rfc3986
  **/
@@ -456,7 +456,7 @@ int http_request_init(struct http_request* req, const char* data,
     init_request_header(&req->header);
     qbuf_init(&req->content);
 
-    err = parse(data,len, req);
+    err = parse(data, len, req);
     if (err) {
         http_request_destroy(req);
     }
@@ -512,7 +512,8 @@ int http_get_request_size(const char* data, unsigned int len) {
     }
 
     struct http_request_header header;
-    parse_header(data, cursor - data, parse_content_length, &header);
+    parse_header(data, cursor + 2 - data, parse_content_length, &header);
+
     return (cursor - data + 4 + header.content_len);
 }
 
