@@ -28,15 +28,18 @@ static void test1(void) {
 "Accept-Language: zh-CN,zh;q=0.8\r\n\r\n";
 
     struct http_request req;
-    if (http_request_init(&req, get_req, strlen(get_req)) != 0) {
+    if (http_request_init(&req) != HRE_SUCCESS) {
         fprintf(stderr, "http_request_init error\n");
+        return;
+    }
+
+    if (http_request_decode(&req, get_req, strlen(get_req)) != HRE_SUCCESS) {
+        fprintf(stderr, "http_request_decode failed.\n");
         return;
     }
 
     printf("-----------------\n");
     http_request_for_each_option(&req, NULL, print_option_func);
-    printf("-----------------\n");
-    printf("get content type = %d\n", http_request_get_content_type(&req));
 
     http_request_destroy(&req);
 }
@@ -57,39 +60,65 @@ static void test2(void) {
 "text=text1&text=text2&submit=submit";
 
     struct http_request req;
-    if (http_request_init(&req, post_req, strlen(post_req)) != 0) {
+    if (http_request_init(&req) != 0) {
         fprintf(stderr, "http_request_init error\n");
+        return;
+    }
+
+    if (http_request_decode(&req, post_req, strlen(post_req)) != HRE_SUCCESS) {
+        fprintf(stderr, "http_request_decode failed.\n");
         return;
     }
 
     printf("-----------------\n");
     http_request_for_each_option(&req, NULL, print_option_func);
-    printf("-----------------\n");
-
-    printf("get content type = %d\n", http_request_get_content_type(&req));
 
     http_request_destroy(&req);
 }
 
-static void test_http_response(void) {
+static void test_http_response_encode(void) {
     struct http_response res;
     const char* data = "{\"status\": \"ok\"}";
 
     http_response_init(&res);
-    if (http_response_pack(&res, HTTP_STATUS_200, HTTP_CONTENT_TYPE_JSON,
-                           data, strlen(data)) == 0) {
+    if (http_response_encode(&res, HTTP_STATUS_200, data, strlen(data)) == HRE_SUCCESS) {
         struct qbuf_ref ref;
-        http_response_get_data(&res, &ref);
-        write(1, ref.base, ref.len);
+        http_response_get_packet(&res, &ref);
+        write(1, ref.base, ref.size);
+        printf("\n");
     } else {
-        printf("pack response failed.\n");
+        fprintf(stderr, "pack response failed.\n");
     }
     http_response_destroy(&res);
+}
+
+static void test_http_request_encode(void) {
+    struct http_request req;
+    if (http_request_init(&req) != HRE_SUCCESS) {
+        fprintf(stderr, "http_request_init falied.\n");
+        return;
+    }
+
+    http_request_set_method(&req, HTTP_REQUEST_METHOD_GET);
+
+    if (http_request_encode(&req, NULL, 0) != HRE_SUCCESS) {
+        fprintf(stderr, "http_request_encode failed.\n");
+        goto err;
+    }
+
+    struct qbuf_ref ref;
+    http_request_get_packet(&req, &ref);
+    write(1, ref.base, ref.size);
+    printf("\n");
+
+err:
+    http_request_destroy(&req);
 }
 
 int main(void) {
     test1();
     test2();
-    test_http_response();
+    test_http_response_encode();
+    test_http_request_encode();
     return 0;
 }

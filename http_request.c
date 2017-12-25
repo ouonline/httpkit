@@ -13,6 +13,7 @@
 #include "utils/str_utils.h"
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 /* ------------------------------------------------------------------------- */
 
@@ -20,13 +21,13 @@ static inline int parse_query_pair_part(const char* data,
                                         unsigned int len,
                                         struct qbuf* q) {
     qbuf_init(q);
-    if (qbuf_resize(q, len) != 0) {
+    if (qbuf_reserve(q, len) != 0) {
         return HRE_NOMEM;
     }
 
-    int ret = http_decode_url(data, len, q->base, len);
-    if (ret >= 0) {
-        q->len = ret;
+    int ret = http_decode_url(data, len, (char*)qbuf_data(q), len);
+    if (ret > 0) {
+        qbuf_resize(q, ret);
     } else {
         qbuf_destroy(q);
     }
@@ -124,17 +125,17 @@ static int parse_method(const char* data, unsigned int len) {
 static int parse_abs_path(const char* data, unsigned int len,
                           struct qbuf* path) {
     qbuf_init(path);
-    if (qbuf_resize(path, len) != 0) {
+    if (qbuf_reserve(path, len) != 0) {
         return HRE_NOMEM;
     }
 
-    int ret = http_decode_url(data, len, path->base, len);
+    int ret = http_decode_url(data, len, (char*)qbuf_data(path), len);
     if (ret < 0) {
         qbuf_destroy(path);
         return ret;
     }
 
-    path->len = ret;
+    qbuf_resize(path, ret);
     return HRE_SUCCESS;
 }
 
@@ -208,157 +209,16 @@ static int parse_request_line(const char* data, unsigned int len,
                              &line->option_list);
 }
 
-typedef void (*parse_header_field_func)(const char* key, unsigned int keylen,
-                                        const char* value, unsigned int valuelen,
-                                        struct http_request_header* header);
-
-static void get_content_length_func(const char* key, unsigned int keylen,
-                                    const char* value, unsigned int valuelen,
-                                    struct http_request_header* header) {
-    (void)key;
-    (void)keylen;
-
-    header->content_len = 0;
-    ndec2int(value, valuelen, (int*)(&header->content_len));
+static void parse_content(const char* data, unsigned int len,
+                          struct qbuf_ref* content) {
+    content->base = data;
+    content->size = len;
 }
 
-static struct content_type {
-    const char* key;
-    unsigned int keylen;
-    unsigned int type;
-} g_content_type_list[] = {
-    {"text/plain", 10, HTTP_CONTENT_TYPE_PLAIN},
-    {"application/json", 16, HTTP_CONTENT_TYPE_JSON},
-    {"application/x-www-form-urlencoded", 33, HTTP_CONTENT_TYPE_FORM},
-    {"text/xml", 8, HTTP_CONTENT_TYPE_XML},
-    {"text/html", 9, HTTP_CONTENT_TYPE_HTML},
-    {NULL, 0, HTTP_CONTENT_TYPE_UNSUPPORTED},
-};
-
-static void get_content_type_func(const char* key, unsigned int keylen,
-                                  const char* value, unsigned int valuelen,
-                                  struct http_request_header* header) {
-    (void)key;
-    (void)keylen;
-
-    int i;
-    const char* cursor;
-
-    cursor = (const char*)memmem(value, valuelen, ";", 1);
-    if (cursor) {
-        valuelen = cursor - value;
-    }
-
-    for (i = 0; g_content_type_list[i].key; ++i) {
-        struct content_type* ct = &(g_content_type_list[i]);
-        if (valuelen != ct->keylen) {
-            continue;
-        }
-
-        if (memcmp(value, ct->key, valuelen) != 0) {
-            continue;
-        }
-
-        header->content_type = ct->type;
-        return;
-    }
-}
-
-#define CONTENT_LENGTH_STR "Content-Length"
-#define CONTENT_LENGTH_LEN 14
-
-static struct header_field_handler {
-    const char* key;
-    unsigned int keylen;
-    parse_header_field_func func;
-} g_header_filed_func_list[] = {
-    {CONTENT_LENGTH_STR, CONTENT_LENGTH_LEN, get_content_length_func},
-    {"Content-Type", 12, get_content_type_func},
-    {NULL, 0, NULL},
-};
-
-static int do_parse_header_field(const char* key, unsigned int klen,
-                                 const char* value, unsigned int vlen,
-                                 struct header_field_handler* handler,
-                                 struct http_request_header* header) {
-    if (klen != handler->keylen) {
-        return HRE_EMPTY;
-    }
-
-    if (memcmp(key, handler->key, klen) != 0) {
-        return HRE_EMPTY;
-    }
-
-    handler->func(key, klen, value, vlen, header);
-    return HRE_SUCCESS;
-}
-
-static void parse_all_header_fields(const char* key, unsigned int klen,
-                                    const char* value, unsigned int vlen,
-                                    struct http_request_header* header) {
-    int i;
-    for (i = 0; g_header_filed_func_list[i].key; ++i) {
-        if (do_parse_header_field(key, klen, value, vlen,
-                                  &(g_header_filed_func_list[i]),
-                                  header) == 0) {
-            return;
-        }
-    }
-}
-
-static void parse_header_line(const char* data, unsigned int len,
-                              parse_header_field_func parse_func,
-                              struct http_request_header* header) {
-    unsigned int keylen = 0;
-    const char* end = data + len;
-    const char* cursor = (const char*)memmem(data, len, ":", 1);
-    if (!cursor) {
-        return;
-    }
-    keylen = cursor - data;
-
-    while (1) {
-        ++cursor;
-        if (cursor >= end) {
-            return; /* nothing */
-        }
-        if (*cursor != ' ') {
-            break;
-        }
-    }
-
-    parse_func(data, keylen, cursor, len - (cursor - data), header);
-}
-
-static void parse_header(const char* data, unsigned int len,
-                         parse_header_field_func parse_func,
-                         struct http_request_header* header) {
-    while (len > 0) {
-        const char* eol = (const char*)memmem(data, len, "\r\n", 2);
-        if (!eol) {
-            return;
-        }
-
-        parse_header_line(data, eol - data, parse_func, header);
-
-        len -= (eol - data + 2);
-        data = eol + 2;
-    }
-}
-
-static int parse_content(const char* data, unsigned int len,
-                         struct qbuf* content) {
-    qbuf_init(content);
-    if (qbuf_resize(content, len) != 0) {
-        return HRE_NOMEM;
-    }
-
-    memcpy(content->base, data, len);
-    return HRE_SUCCESS;
-}
-
-static int parse(const char* data, unsigned int len, struct http_request* req) {
-    int err = 0;
+static int parse(struct http_request* req) {
+    const char* data = (const char*)qbuf_data(&req->raw_data);
+    unsigned int len = qbuf_size(&req->raw_data);
+    int err = HRE_SUCCESS;
     const char *eoh, *cursor;
 
     cursor = (const char*)memmem(data, len, "\r\n\r\n", 4);
@@ -377,33 +237,26 @@ static int parse(const char* data, unsigned int len, struct http_request* req) {
     if (req->req_line.method == HTTP_REQUEST_METHOD_POST) {
         len -= (cursor - data);
         data = cursor;
-        parse_header(data, eoh - data, parse_all_header_fields,
-                     &req->header);
+
+        http_header_decode(&req->header, data, eoh - data);
 
         len -= (eoh - data + 2);
         data = eoh + 2;
-        err = parse_content(data, len, &req->content);
-        if (err) {
-            return err;
-        }
 
-        if (req->header.content_len > req->content.len) {
+        parse_content(data, len, &req->content);
+
+        if (req->header.content_len > req->content.size) {
             return HRE_CONTENT_SIZE;
         }
     }
 
-    return err;
+    return HRE_SUCCESS;
 }
 
 static inline void init_request_line(struct http_request_line* line) {
     line->method = HTTP_REQUEST_METHOD_UNSUPPORTED;
     qbuf_init(&line->abs_path);
     list_init(&line->option_list);
-}
-
-static inline void init_request_header(struct http_request_header* header) {
-    header->content_type = HTTP_CONTENT_TYPE_UNSUPPORTED;
-    header->content_len = 0;
 }
 
 static inline void destroy_request_line(struct http_request_line* line) {
@@ -422,41 +275,30 @@ static inline void destroy_request_line(struct http_request_line* line) {
     qbuf_destroy(&line->abs_path);
 }
 
-static inline void destroy_request_header(struct http_request_header* header) {
-    init_request_header(header);
-}
-
-static void parse_content_length(const char* key, unsigned int klen,
-                                 const char* value, unsigned int vlen,
-                                 struct http_request_header* header) {
-    if (klen != CONTENT_LENGTH_LEN) {
-        return;
-    }
-
-    if (memcmp(key, CONTENT_LENGTH_STR, CONTENT_LENGTH_LEN) != 0) {
-        return;
-    }
-
-    get_content_length_func(key, klen, value, vlen, header);
-}
-
 /* ------------------------------------------------------------------------- */
 
 void http_request_destroy(struct http_request* req) {
     destroy_request_line(&req->req_line);
-    destroy_request_header(&req->header);
-    qbuf_destroy(&req->content);
+    http_header_destroy(&req->header);
+    qbuf_ref_destroy(&req->content);
+    qbuf_destroy(&req->raw_data);
 }
 
-int http_request_init(struct http_request* req, const char* data,
-                      unsigned int len) {
-    int err;
-
+int http_request_init(struct http_request* req) {
     init_request_line(&req->req_line);
-    init_request_header(&req->header);
-    qbuf_init(&req->content);
+    http_header_init(&req->header);
+    qbuf_ref_init(&req->content);
+    qbuf_init(&req->raw_data);
+    return 0;
+}
 
-    err = parse(data, len, req);
+int http_request_decode(struct http_request* req, const char* data,
+                        unsigned int len) {
+    if (qbuf_assign(&req->raw_data, data, len) != 0) {
+        return HRE_NOMEM;
+    }
+
+    int err = parse(req);
     if (err) {
         http_request_destroy(req);
     }
@@ -464,14 +306,169 @@ int http_request_init(struct http_request* req, const char* data,
     return err;
 }
 
-int http_request_get_method(const struct http_request* req) {
+static const struct qbuf_ref g_req_method_str[] = {
+    {"GET", 3},
+    {"POST", 4},
+    {NULL, 0},
+};
+
+static inline struct http_request_option*
+create_option(const char* key, unsigned int klen, const char* value, unsigned int vlen) {
+    struct http_request_option* opt =
+        (struct http_request_option*)malloc(sizeof(struct http_request_option));
+    if (!opt) {
+        return NULL;
+    }
+
+    if (qbuf_reserve(&opt->key, klen) != 0) {
+        goto err_key;
+    }
+
+    if (qbuf_reserve(&opt->value, vlen) != 0) {
+        goto err_value;
+    }
+
+    qbuf_assign(&opt->key, key, klen);
+    qbuf_assign(&opt->value, value, vlen);
+    return opt;
+
+err_value:
+    qbuf_destroy(&opt->key);
+err_key:
+    free(opt);
+    return NULL;
+}
+
+/* make sure opt_list is not empty */
+static inline void append_option_list(struct qbuf* q, struct list_node* opt_list) {
+    struct list_node* cur;
+    struct http_request_option* opt;
+
+    cur = list_first(opt_list);
+    opt = list_entry(cur, struct http_request_option, node);
+    qbuf_append(q, "?", 1);
+    qbuf_append(q, qbuf_data(&opt->key), qbuf_size(&opt->key));
+    qbuf_append(q, "=", 1);
+    qbuf_append(q, qbuf_data(&opt->value), qbuf_size(&opt->value));
+
+    list_for_each_from(cur, list_next(cur), opt_list) {
+        opt = list_entry(cur, struct http_request_option, node);
+        qbuf_append(q, "&", 1);
+        qbuf_append(q, qbuf_data(&opt->key), qbuf_size(&opt->key));
+        qbuf_append(q, "=", 1);
+        qbuf_append(q, qbuf_data(&opt->value), qbuf_size(&opt->value));
+    }
+}
+
+static inline void append_req_line(struct qbuf* data,
+                                   struct http_request_line* req_line) {
+    qbuf_append(data, g_req_method_str[req_line->method].base,
+                g_req_method_str[req_line->method].size);
+
+    qbuf_append(data, " ", 1);
+
+    if (qbuf_empty(&req_line->abs_path)) {
+        qbuf_append(data, "/", 1);
+        qbuf_assign(&req_line->abs_path, "/", 1);
+    } else {
+        qbuf_append(data, (const char*)qbuf_data(&req_line->abs_path),
+                    qbuf_size(&req_line->abs_path));
+    }
+
+    if (!list_empty(&req_line->option_list)) {
+        append_option_list(data, &req_line->option_list);
+    }
+
+    qbuf_append(data, " HTTP/1.1\r\n", 11);
+}
+
+static inline void append_req_header(struct qbuf* data,
+                                     struct http_header* header,
+                                     unsigned int content_len) {
+    char tmp[64];
+    unsigned int len = sprintf(tmp, "Content-Length: %u\r\n", content_len);
+    qbuf_append(data, tmp, len);
+
+    header->content_len = content_len;
+}
+
+int http_request_encode(struct http_request* req,
+                        const char* content, unsigned int content_len) {
+    if (req->req_line.method >= HTTP_REQUEST_METHOD_UNSUPPORTED) {
+        return HRE_REQMETHOD;
+    }
+
+    qbuf_clear(&req->raw_data);
+    if (qbuf_reserve(&req->raw_data, 128 + content_len) != 0) {
+        return HRE_NOMEM;
+    }
+
+    append_req_line(&req->raw_data, &req->req_line);
+    append_req_header(&req->raw_data, &req->header, content_len);
+    qbuf_append(&req->raw_data, "\r\n", 2);
+
+    unsigned int content_pos = qbuf_size(&req->raw_data);
+    if (content_len > 0) {
+        qbuf_append(&req->raw_data, content, content_len);
+        req->content.base = (const char*)qbuf_data(&req->raw_data) + content_pos;
+        req->content.size = content_len;
+    } else {
+        req->content.base = NULL;
+        req->content.size = 0;
+    }
+
+    return HRE_SUCCESS;
+}
+
+unsigned int http_request_get_method(const struct http_request* req) {
     return req->req_line.method;
+}
+
+void http_request_set_method(struct http_request* req, unsigned int method) {
+    req->req_line.method = method;
+}
+
+int http_request_set_abs_path(struct http_request* req, const char* data,
+                              unsigned int len) {
+    if (qbuf_assign(&req->req_line.abs_path, data, len) != 0) {
+        return HRE_NOMEM;
+    }
+
+    return HRE_SUCCESS;
 }
 
 void http_request_get_abs_path(const struct http_request* req,
                                struct qbuf_ref* ref) {
-    ref->base = req->req_line.abs_path.base;
-    ref->len = req->req_line.abs_path.len;
+    ref->base = (const char*)qbuf_data(&req->req_line.abs_path);
+    ref->size = qbuf_size(&req->req_line.abs_path);
+}
+
+int http_request_append_option(struct http_request* req,
+                               const char* key, unsigned int klen,
+                               const char* value, unsigned int vlen) {
+    struct http_request_option* opt;
+    opt = (struct http_request_option*)malloc(sizeof(struct http_request_option));
+    if (!opt) {
+        return HRE_NOMEM;
+    }
+
+    if (!qbuf_append(&opt->key, key, klen)) {
+        goto err_key;
+    }
+
+    if (!qbuf_append(&opt->value, value, vlen)) {
+        goto err_value;
+    }
+
+    list_add_prev(&req->req_line.option_list, &opt->node);
+
+    return HRE_SUCCESS;
+
+err_value:
+    qbuf_destroy(&opt->key);
+err_key:
+    free(opt);
+    return HRE_NOMEM;
 }
 
 int http_request_for_each_option(const struct http_request* req, void* arg,
@@ -485,8 +482,8 @@ int http_request_for_each_option(const struct http_request* req, void* arg,
         struct http_request_option* opt;
 
         opt = list_entry(cur, struct http_request_option, node);
-        err = f(arg, opt->key.base, opt->key.len,
-                opt->value.base, opt->value.len);
+        err = f(arg, (const char*)qbuf_data(&opt->key), qbuf_size(&opt->key),
+                (const char*)qbuf_data(&opt->value), qbuf_size(&opt->value));
         if (err) {
             return err;
         }
@@ -495,26 +492,32 @@ int http_request_for_each_option(const struct http_request* req, void* arg,
     return HRE_SUCCESS;
 }
 
-unsigned int http_request_get_content_type(const struct http_request* req) {
-    return req->header.content_type;
-}
-
 void http_request_get_content(const struct http_request* req,
                               struct qbuf_ref* ref) {
     ref->base = req->content.base;
-    ref->len = req->content.len;
+    ref->size = req->content.size;
+}
+
+void http_request_get_packet(const struct http_request* req,
+                             struct qbuf_ref* ref) {
+    ref->base = (const char*)qbuf_data(&req->raw_data);
+    ref->size = qbuf_size(&req->raw_data);
 }
 
 int http_get_request_size(const char* data, unsigned int len) {
+    unsigned int ret = 0;
     const char* cursor = (const char*)memmem(data, len, "\r\n\r\n", 4);
     if (!cursor) {
         return HRE_HEADER;
     }
 
-    struct http_request_header header;
-    parse_header(data, cursor + 2 - data, parse_content_length, &header);
+    struct http_header header;
+    http_header_init(&header);
+    http_header_decode(&header, data, cursor + 2 - data);
+    ret = (cursor - data + 4 + header.content_len);
+    http_header_destroy(&header);
 
-    return (cursor - data + 4 + header.content_len);
+    return ret;
 }
 
 int http_decode_url(const char* src, unsigned int src_size,

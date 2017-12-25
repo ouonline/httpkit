@@ -47,16 +47,8 @@ enum {
     HTTP_STATUS_504,
     HTTP_STATUS_505,
 
-    HTTP_STATUS_MAX,
+    HTTP_STATUS_UNSUPPORTED,
 };
-
-/* request content types */
-#define HTTP_CONTENT_TYPE_PLAIN       0 /* text/plain */
-#define HTTP_CONTENT_TYPE_JSON        1 /* application/json */
-#define HTTP_CONTENT_TYPE_FORM        2 /* application/x-www-form-urlencoded */
-#define HTTP_CONTENT_TYPE_XML         3 /* text/xml */
-#define HTTP_CONTENT_TYPE_HTML        4 /* text/html */
-#define HTTP_CONTENT_TYPE_UNSUPPORTED 5
 
 /* error code */
 #define HRE_SUCCESS      0
@@ -70,5 +62,6 @@ enum {
 #define HRE_CONTENT_TYPE (-8)  /* invalid content type */
 #define HRE_CONTENT_SIZE (-9)  /* content size mismatch */
 #define HRE_BUFSIZE      (-10) /* invalid buffer size */
+#define HRE_RESLINE      (-11) /* response status line error */
 
 #endif

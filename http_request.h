@@ -3,6 +3,7 @@
 
 #include "utils/list.h"
 #include "utils/qbuf.h"
+#include "http_header.h"
 
 struct http_request_option {
     struct qbuf key;
@@ -16,15 +17,11 @@ struct http_request_line {
     struct list_node option_list;
 };
 
-struct http_request_header {
-    unsigned int content_type;
-    unsigned int content_len;
-};
-
 struct http_request {
     struct http_request_line req_line;
-    struct http_request_header header;
-    struct qbuf content;
+    struct http_header header;
+    struct qbuf_ref content;
+    struct qbuf raw_data;
 };
 
 /* request methods */
@@ -34,19 +31,30 @@ struct http_request {
 
 /* ------------------------------------------------------------------------- */
 
-int http_request_init(struct http_request*, const char* data,
-                      unsigned int len);
+int http_request_init(struct http_request*);
 void http_request_destroy(struct http_request*);
 
-int http_request_get_method(const struct http_request*);
+unsigned int http_request_get_method(const struct http_request*);
+void http_request_set_method(struct http_request*, unsigned int);
+
 void http_request_get_abs_path(const struct http_request*, struct qbuf_ref*);
+int http_request_set_abs_path(struct http_request*, const char* data,
+                              unsigned int len);
+
 int http_request_for_each_option(const struct http_request*, void* arg,
                                  int (*f)(void* arg,
                                           const char* k, unsigned int klen,
                                           const char* v, unsigned int vlen));
+int http_request_append_option(struct http_request*,
+                               const char* key, unsigned int klen,
+                               const char* value, unsigned int vlen);
 
-unsigned int http_request_get_content_type(const struct http_request*);
+int http_request_decode(struct http_request*, const char* data, unsigned int len);
+int http_request_encode(struct http_request*,
+                        const char* content, unsigned int content_len);
+
 void http_request_get_content(const struct http_request*, struct qbuf_ref*);
+void http_request_get_packet(const struct http_request*, struct qbuf_ref*);
 
 /* ----- auxiliary functions ----- */
 
