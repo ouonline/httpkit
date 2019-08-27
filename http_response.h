@@ -1,7 +1,7 @@
 #ifndef __HTTP_RESPONSE_H__
 #define __HTTP_RESPONSE_H__
 
-#include "utils/qbuf.h"
+#include "deps/utils/qbuf.h"
 #include "http_header.h"
 
 struct http_response_status {

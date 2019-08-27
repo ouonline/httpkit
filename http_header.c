@@ -4,7 +4,7 @@
 
 #include "http_header.h"
 #include "http_common.h"
-#include "utils/str_utils.h"
+#include "deps/utils/str_utils.h"
 #include <string.h>
 
 int http_header_init(struct http_header* header) {

@@ -1,8 +1,8 @@
 #ifndef __HTTP_REQUEST_H__
 #define __HTTP_REQUEST_H__
 
-#include "utils/list.h"
-#include "utils/qbuf.h"
+#include "deps/utils/list.h"
+#include "deps/utils/qbuf.h"
 #include "http_header.h"
 
 struct http_request_option {
@@ -57,10 +57,6 @@ void http_request_get_content(const struct http_request*, struct qbuf_ref*);
 void http_request_get_packet(const struct http_request*, struct qbuf_ref*);
 
 /* ----- auxiliary functions ----- */
-
-/* returns an error code or the decoded len in `dst`. */
-int http_decode_url(const char* src, unsigned int src_size,
-                    char* dst, unsigned int dst_size);
 
 /* returns an error code or the request size. */
 int http_get_request_size(const char* data, unsigned int len);
