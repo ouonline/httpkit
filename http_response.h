@@ -1,6 +1,10 @@
 #ifndef __HTTP_RESPONSE_H__
 #define __HTTP_RESPONSE_H__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "deps/utils/qbuf.h"
 #include "http_header.h"
 
@@ -32,5 +36,9 @@ int http_response_decode(struct http_response*, const char* data,
 /* ----- auxiliary functions ----- */
 
 int http_get_response_size(const char* data, unsigned int len);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

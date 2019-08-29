@@ -1,6 +1,10 @@
 #ifndef __HTTP_COMMON_H__
 #define __HTTP_COMMON_H__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 enum {
     HTTP_STATUS_100 = 0,
     HTTP_STATUS_101,
@@ -63,5 +67,9 @@ enum {
 #define HRE_CONTENT_SIZE (-9)  /* content size mismatch */
 #define HRE_BUFSIZE      (-10) /* invalid buffer size */
 #define HRE_RESLINE      (-11) /* response status line error */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

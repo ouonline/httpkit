@@ -1,6 +1,10 @@
 #ifndef __HTTP_REQUEST_H__
 #define __HTTP_REQUEST_H__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "deps/utils/list.h"
 #include "deps/utils/qbuf.h"
 #include "http_header.h"
@@ -60,5 +64,9 @@ void http_request_get_packet(const struct http_request*, struct qbuf_ref*);
 
 /* returns an error code or the request size. */
 int http_get_request_size(const char* data, unsigned int len);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
