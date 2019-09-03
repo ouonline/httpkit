@@ -7,8 +7,12 @@ else
 endif
 CFLAGS := $(CFLAGS) -Wall -Werror -Wextra -fPIC
 
-INCLUDE := -I..
-LIBS := ../libhttpkit.a
+ifndef DEPSDIR
+    DEPSDIR := $(shell pwd)/../..
+endif
+
+INCLUDE := -I$(DEPSDIR) -I..
+LIBS := ../libhttpkit.a $(DEPSDIR)/utils/libutils.a
 
 OBJS := $(patsubst %.c, %.o, $(wildcard *.c))
 
@@ -18,13 +22,15 @@ TARGET := test
 
 all: $(TARGET)
 
+$(OBJS): | pre-process
+
 pre-process:
-	$(MAKE) -C ..
+	$(MAKE) DEPSDIR=$(DEPSDIR) -C ..
 
 post-clean:
-	$(MAKE) clean -C ..
+	$(MAKE) clean DEPSDIR=$(DEPSDIR) -C ..
 
-$(TARGET): $(OBJS) | pre-process
+$(TARGET): $(OBJS)
 	$(CC) $(CFLAGS) -o $@ $^ $(LIBS)
 
 .c.o:
