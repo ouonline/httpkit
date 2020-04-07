@@ -16,24 +16,21 @@ TARGET := test_httpkit
 
 all: $(TARGET)
 
-test_httpkit_OBJS := ./test.c.test_httpkit.o
+.PHONY: __omake_dep__1
+
+__omake_dep__1:
+	$(MAKE) debug=$(debug) libhttpkit.a -C ..
+
+test_httpkit_OBJS := test.c.test_httpkit.o
 
 test_httpkit_INCLUDE := -I../..
 
 test_httpkit_LIBS := ../libhttpkit.a ../../utils/libutils.a
 
-./test.c.test_httpkit.o: ./test.c
+test.c.test_httpkit.o: test.c
 	$(CC) $(CFLAGS) $(test_httpkit_INCLUDE) -c $< -o $@
 
-.PHONY: test_httpkit_pre_process
-
-$(test_httpkit_OBJS): | test_httpkit_pre_process
-
-test_httpkit_pre_process:
-	$(MAKE) debug=$(debug) -C ..
-	$(MAKE) debug=$(debug) -C ../../utils
-
-test_httpkit: $(test_httpkit_OBJS)
+test_httpkit: $(test_httpkit_OBJS) | __omake_dep__1
 	$(CC) $(CFLAGS) -o $@ $^ $(test_httpkit_LIBS)
 
 clean:

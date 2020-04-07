@@ -16,35 +16,33 @@ TARGET := libhttpkit.a libhttpkit.so
 
 all: $(TARGET)
 
-httpkit_OBJS := ./http_response.c.httpkit.o ./http_header.c.httpkit.o ./http_request.c.httpkit.o ./http_utils.c.httpkit.o
+.PHONY: __omake_dep__1
+
+__omake_dep__1:
+	$(MAKE) debug=$(debug) libutils.a -C ../utils
+
+httpkit_OBJS := http_response.c.httpkit.o http_header.c.httpkit.o http_request.c.httpkit.o http_utils.c.httpkit.o
 
 httpkit_INCLUDE := -I..
 
 httpkit_LIBS := ../utils/libutils.a
 
-./http_response.c.httpkit.o: ./http_response.c
+http_response.c.httpkit.o: http_response.c
 	$(CC) $(CFLAGS) $(httpkit_INCLUDE) -c $< -o $@
 
-./http_header.c.httpkit.o: ./http_header.c
+http_header.c.httpkit.o: http_header.c
 	$(CC) $(CFLAGS) $(httpkit_INCLUDE) -c $< -o $@
 
-./http_request.c.httpkit.o: ./http_request.c
+http_request.c.httpkit.o: http_request.c
 	$(CC) $(CFLAGS) $(httpkit_INCLUDE) -c $< -o $@
 
-./http_utils.c.httpkit.o: ./http_utils.c
+http_utils.c.httpkit.o: http_utils.c
 	$(CC) $(CFLAGS) $(httpkit_INCLUDE) -c $< -o $@
 
-.PHONY: httpkit_pre_process
-
-$(httpkit_OBJS): | httpkit_pre_process
-
-httpkit_pre_process:
-	$(MAKE) debug=$(debug) -C ../utils
-
-libhttpkit.a: $(httpkit_OBJS)
+libhttpkit.a: $(httpkit_OBJS) | __omake_dep__1
 	$(AR) rc $@ $^
 
-libhttpkit.so: $(httpkit_OBJS)
+libhttpkit.so: $(httpkit_OBJS) | __omake_dep__1
 	$(CC) -shared -o $@ $^ $(httpkit_LIBS)
 
 clean:
