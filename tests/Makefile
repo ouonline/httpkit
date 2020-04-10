@@ -19,17 +19,17 @@ all: $(TARGET)
 omake_phony_0:
 	$(MAKE) debug=$(debug) libhttpkit_static.a -C ..
 
-test_httpkit_INCLUDE := -I../..
+omake_dep_0_INCLUDE := -I../..
 
-test.c.test_httpkit.o: test.c
-	$(CC) $(CFLAGS) -Wall -Werror -Wextra -fPIC $(test_httpkit_INCLUDE) -c $< -o $@
+test.c.omake_dep_0.o: test.c
+	$(CC) $(CFLAGS) -Wall -Werror -Wextra -fPIC $(omake_dep_0_INCLUDE) -c $< -o $@
 
-test_httpkit_OBJS := test.c.test_httpkit.o
+test_httpkit_OBJS := test.c.omake_dep_0.o
 
 test_httpkit_LIBS := ../libhttpkit_static.a ../../utils/libutils_static.a
 
 test_httpkit: $(test_httpkit_OBJS) | omake_phony_0
-	$(CC) $(CFLAGS) -Wall -Werror -Wextra -fPIC -o $@ $^ $(test_httpkit_LIBS)
+	$(CC) $(CFLAGS) -fPIC -Wextra -Werror -Wall -o $@ $^ $(test_httpkit_LIBS)
 
 clean:
 	rm -f $(TARGET) $(test_httpkit_OBJS)

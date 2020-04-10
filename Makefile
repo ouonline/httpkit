@@ -40,7 +40,7 @@ httpkit_shared_OBJS := http_utils.c.omake_dep_0.o http_header.c.omake_dep_0.o ht
 httpkit_shared_LIBS := ../utils/libutils_static.a
 
 libhttpkit_shared.so: $(httpkit_shared_OBJS) | omake_phony_0
-	$(CC) $(CFLAGS) -shared -o $@ $^ $(httpkit_shared_LIBS)
+	$(CC) $(CFLAGS) -fPIC -Wextra -Werror -Wall -shared -o $@ $^ $(httpkit_shared_LIBS)
 
 httpkit_static_OBJS := http_utils.c.omake_dep_0.o http_header.c.omake_dep_0.o http_request.c.omake_dep_0.o http_response.c.omake_dep_0.o
 

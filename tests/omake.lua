@@ -1,8 +1,11 @@
 project = CreateProject()
 
+dep = project:CreateDependency()
+dep:AddSourceFiles("*.c")
+dep:AddFlags("-Wall", "-Werror", "-Wextra", "-fPIC")
+dep:AddStaticLibrary("..", "httpkit_static")
+
 target = project:CreateBinary("test_httpkit")
-target:AddSourceFiles("*.c")
-target:AddFlags("-Wall", "-Werror", "-Wextra", "-fPIC")
-target:AddStaticLibrary("..", "httpkit_static")
+target:AddDependencies(dep)
 
 return project
