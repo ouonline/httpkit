@@ -9,6 +9,10 @@ struct http_header {
     unsigned int content_len;
 };
 
+#ifdef __cplusplus
+typedef struct http_header HttpHeader;
+#endif
+
 int http_header_init(struct http_header*);
 void http_header_destroy(struct http_header*);
 

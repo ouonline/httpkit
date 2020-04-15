@@ -21,6 +21,11 @@ struct http_response {
     struct qbuf raw_data;
 };
 
+#ifdef __cplusplus
+typedef struct http_response_status HttpResponseStatus;
+typedef struct http_response HttpResponse;
+#endif
+
 int http_response_init(struct http_response*);
 void http_response_destroy(struct http_response*);
 

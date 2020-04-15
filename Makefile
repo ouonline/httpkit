@@ -12,40 +12,43 @@ AR := ar
 
 TARGET := libhttpkit_shared.so libhttpkit_static.a
 
-.PHONY: all clean
+.PHONY: all clean distclean
 
 all: $(TARGET)
 
 .PHONY: omake_phony_0
-
 omake_phony_0:
 	$(MAKE) debug=$(debug) libutils_static.a -C ../utils
 
 omake_dep_0_INCLUDE := -I..
 
-http_utils.c.omake_dep_0.o: http_utils.c
+omake_dep_0.http_utils.c.o: http_utils.c
 	$(CC) $(CFLAGS) -Wall -Werror -Wextra -fPIC $(omake_dep_0_INCLUDE) -c $< -o $@
 
-http_header.c.omake_dep_0.o: http_header.c
+omake_dep_0.http_header.c.o: http_header.c
 	$(CC) $(CFLAGS) -Wall -Werror -Wextra -fPIC $(omake_dep_0_INCLUDE) -c $< -o $@
 
-http_request.c.omake_dep_0.o: http_request.c
+omake_dep_0.http_request.c.o: http_request.c
 	$(CC) $(CFLAGS) -Wall -Werror -Wextra -fPIC $(omake_dep_0_INCLUDE) -c $< -o $@
 
-http_response.c.omake_dep_0.o: http_response.c
+omake_dep_0.http_response.c.o: http_response.c
 	$(CC) $(CFLAGS) -Wall -Werror -Wextra -fPIC $(omake_dep_0_INCLUDE) -c $< -o $@
 
-httpkit_shared_OBJS := http_utils.c.omake_dep_0.o http_header.c.omake_dep_0.o http_request.c.omake_dep_0.o http_response.c.omake_dep_0.o
+httpkit_shared_OBJS := omake_dep_0.http_response.c.o omake_dep_0.http_request.c.o omake_dep_0.http_header.c.o omake_dep_0.http_utils.c.o
 
 httpkit_shared_LIBS := ../utils/libutils_static.a
 
 libhttpkit_shared.so: $(httpkit_shared_OBJS) | omake_phony_0
 	$(CC) $(CFLAGS) -fPIC -Wextra -Werror -Wall -shared -o $@ $^ $(httpkit_shared_LIBS)
 
-httpkit_static_OBJS := http_utils.c.omake_dep_0.o http_header.c.omake_dep_0.o http_request.c.omake_dep_0.o http_response.c.omake_dep_0.o
+httpkit_static_OBJS := omake_dep_0.http_response.c.o omake_dep_0.http_request.c.o omake_dep_0.http_header.c.o omake_dep_0.http_utils.c.o
 
 libhttpkit_static.a: $(httpkit_static_OBJS) | omake_phony_0
 	$(AR) rc $@ $^
 
 clean:
 	rm -f $(TARGET) $(httpkit_shared_OBJS) $(httpkit_static_OBJS)
+
+distclean:
+	$(MAKE) clean
+	$(MAKE) distclean -C ../utils

@@ -10,26 +10,29 @@ endif
 
 TARGET := test_httpkit
 
-.PHONY: all clean
+.PHONY: all clean distclean
 
 all: $(TARGET)
 
 .PHONY: omake_phony_0
-
 omake_phony_0:
 	$(MAKE) debug=$(debug) libhttpkit_static.a -C ..
 
 omake_dep_0_INCLUDE := -I../..
 
-test.c.omake_dep_0.o: test.c
-	$(CC) $(CFLAGS) -Wall -Werror -Wextra -fPIC $(omake_dep_0_INCLUDE) -c $< -o $@
+omake_dep_0.test.c.o: test.c
+	$(CC) $(CFLAGS) -Wall -Werror -Wextra $(omake_dep_0_INCLUDE) -c $< -o $@
 
-test_httpkit_OBJS := test.c.omake_dep_0.o
+test_httpkit_OBJS := omake_dep_0.test.c.o
 
 test_httpkit_LIBS := ../libhttpkit_static.a ../../utils/libutils_static.a
 
 test_httpkit: $(test_httpkit_OBJS) | omake_phony_0
-	$(CC) $(CFLAGS) -fPIC -Wextra -Werror -Wall -o $@ $^ $(test_httpkit_LIBS)
+	$(CC) $(CFLAGS) -Wextra -Werror -Wall -o $@ $^ $(test_httpkit_LIBS)
 
 clean:
 	rm -f $(TARGET) $(test_httpkit_OBJS)
+
+distclean:
+	$(MAKE) clean
+	$(MAKE) distclean -C ..

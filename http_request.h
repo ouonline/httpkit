@@ -28,6 +28,12 @@ struct http_request {
     struct qbuf raw_data;
 };
 
+#ifdef __cplusplus
+typedef struct http_request_option HttpRequestOption;
+typedef struct http_request_line HttpRequestLine;
+typedef struct http_request HttpRequest;
+#endif
+
 /* request methods */
 #define HTTP_REQUEST_METHOD_GET         0
 #define HTTP_REQUEST_METHOD_POST        1
