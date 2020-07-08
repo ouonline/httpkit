@@ -1,5 +1,5 @@
-#ifndef __HTTP_UTILS_H__
-#define __HTTP_UTILS_H__
+#ifndef __HTTPKIT_HTTP_UTILS_H__
+#define __HTTPKIT_HTTP_UTILS_H__
 
 #ifdef __cplusplus
 extern "C" {
