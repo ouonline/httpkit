@@ -22,9 +22,6 @@ omake_phony_0:
 
 omake_dep_0_INCLUDE := -I..
 
-omake_dep_0.http_utils.c.o: http_utils.c
-	$(CC) $(CFLAGS) -Wall -Werror -Wextra -fPIC $(omake_dep_0_INCLUDE) -c $< -o $@
-
 omake_dep_0.http_header.c.o: http_header.c
 	$(CC) $(CFLAGS) -Wall -Werror -Wextra -fPIC $(omake_dep_0_INCLUDE) -c $< -o $@
 
@@ -34,14 +31,17 @@ omake_dep_0.http_request.c.o: http_request.c
 omake_dep_0.http_response.c.o: http_response.c
 	$(CC) $(CFLAGS) -Wall -Werror -Wextra -fPIC $(omake_dep_0_INCLUDE) -c $< -o $@
 
-httpkit_shared_OBJS := omake_dep_0.http_response.c.o omake_dep_0.http_request.c.o omake_dep_0.http_header.c.o omake_dep_0.http_utils.c.o
+omake_dep_0.http_utils.c.o: http_utils.c
+	$(CC) $(CFLAGS) -Wall -Werror -Wextra -fPIC $(omake_dep_0_INCLUDE) -c $< -o $@
+
+httpkit_shared_OBJS := omake_dep_0.http_utils.c.o omake_dep_0.http_response.c.o omake_dep_0.http_request.c.o omake_dep_0.http_header.c.o
 
 httpkit_shared_LIBS := ../utils/libutils_static.a
 
 libhttpkit_shared.so: $(httpkit_shared_OBJS) | omake_phony_0
-	$(CC) $(CFLAGS) -fPIC -Wextra -Werror -Wall -shared -o $@ $^ $(httpkit_shared_LIBS)
+	$(CC) $(CFLAGS) -Wall -Werror -Wextra -fPIC -shared -o $@ $^ $(httpkit_shared_LIBS)
 
-httpkit_static_OBJS := omake_dep_0.http_response.c.o omake_dep_0.http_request.c.o omake_dep_0.http_header.c.o omake_dep_0.http_utils.c.o
+httpkit_static_OBJS := omake_dep_0.http_utils.c.o omake_dep_0.http_response.c.o omake_dep_0.http_request.c.o omake_dep_0.http_header.c.o
 
 libhttpkit_static.a: $(httpkit_static_OBJS) | omake_phony_0
 	$(AR) rc $@ $^

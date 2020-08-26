@@ -28,7 +28,7 @@ test_httpkit_OBJS := omake_dep_0.test.c.o
 test_httpkit_LIBS := ../libhttpkit_static.a ../../utils/libutils_static.a
 
 test_httpkit: $(test_httpkit_OBJS) | omake_phony_0
-	$(CC) $(CFLAGS) -Wextra -Werror -Wall -o $@ $^ $(test_httpkit_LIBS)
+	$(CC) $(CFLAGS) -Wall -Werror -Wextra -o $@ $^ $(test_httpkit_LIBS)
 
 clean:
 	rm -f $(TARGET) $(test_httpkit_OBJS)

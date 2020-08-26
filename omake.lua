@@ -1,14 +1,11 @@
-project = CreateProject()
+project = Project()
 
 dep = project:CreateDependency()
-dep:AddSourceFiles("*.c")
-dep:AddFlags("-Wall", "-Werror", "-Wextra", "-fPIC")
-dep:AddStaticLibrary("../utils", "utils_static")
+    :AddSourceFiles("*.c")
+    :AddFlags({"-Wall", "-Werror", "-Wextra", "-fPIC"})
+    :AddStaticLibraries("../utils", "utils_static")
 
-a = project:CreateStaticLibrary("httpkit_static")
-a:AddDependencies(dep)
-
-so = project:CreateSharedLibrary("httpkit_shared")
-so:AddDependencies(dep)
+project:CreateStaticLibrary("httpkit_static"):AddDependencies(dep)
+project:CreateSharedLibrary("httpkit_shared"):AddDependencies(dep)
 
 return project
