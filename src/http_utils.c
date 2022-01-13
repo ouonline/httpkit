@@ -1,6 +1,6 @@
-#include "http_utils.h"
-#include "http_common.h"
-#include "utils/str_utils.h"
+#include "httpkit/http_utils.h"
+#include "httpkit/http_common.h"
+#include "cutils/str_utils.h"
 
 int http_decode_url(const char* src, unsigned int src_size,
                     char* dst, unsigned int dst_size) {

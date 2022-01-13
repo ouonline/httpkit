@@ -2,8 +2,8 @@
 #define _GNU_SOURCE
 #endif
 
-#include "http_common.h"
-#include "http_response.h"
+#include "httpkit/http_common.h"
+#include "httpkit/http_response.h"
 #include <string.h>
 #include <stdio.h>
 

@@ -8,9 +8,9 @@
 #define _GNU_SOURCE
 #endif
 
-#include "http_common.h"
-#include "http_request.h"
-#include "http_utils.h"
+#include "httpkit/http_common.h"
+#include "httpkit/http_request.h"
+#include "httpkit/http_utils.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>

@@ -2,9 +2,9 @@
 #define _GNU_SOURCE
 #endif
 
-#include "http_header.h"
-#include "http_common.h"
-#include "utils/str_utils.h"
+#include "httpkit/http_header.h"
+#include "httpkit/http_common.h"
+#include "cutils/str_utils.h"
 #include <string.h>
 
 int http_header_init(struct http_header* header) {

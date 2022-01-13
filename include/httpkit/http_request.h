@@ -5,8 +5,8 @@
 extern "C" {
 #endif
 
-#include "utils/list.h"
-#include "utils/qbuf.h"
+#include "cutils/list.h"
+#include "cutils/qbuf.h"
 #include "http_header.h"
 
 struct http_request_option {
