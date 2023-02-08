@@ -25,9 +25,7 @@ static void get_content_length_func(const char* key, unsigned int keylen,
                                     struct http_header* header) {
     (void)key;
     (void)keylen;
-
-    header->content_len = 0;
-    ndec2int(value, valuelen, (int*)(&header->content_len));
+    header->content_len = ndec2long(value, valuelen);
 }
 
 static const struct header_field_handler {

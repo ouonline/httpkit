@@ -280,14 +280,14 @@ static inline void destroy_request_line(struct http_request_line* line) {
 void http_request_destroy(struct http_request* req) {
     destroy_request_line(&req->req_line);
     http_header_destroy(&req->header);
-    qbuf_ref_destroy(&req->content);
+    qbuf_ref_reset(&req->content);
     qbuf_destroy(&req->raw_data);
 }
 
 int http_request_init(struct http_request* req) {
     init_request_line(&req->req_line);
     http_header_init(&req->header);
-    qbuf_ref_init(&req->content);
+    qbuf_ref_reset(&req->content);
     qbuf_init(&req->raw_data);
     return 0;
 }

@@ -63,20 +63,20 @@ static const struct status_info {
 
 static inline void init_http_response_status(struct http_response_status* st) {
     st->code = HTTP_STATUS_UNSUPPORTED;
-    qbuf_ref_init(&st->text);
-    qbuf_ref_init(&st->http_version);
+    qbuf_ref_reset(&st->text);
+    qbuf_ref_reset(&st->http_version);
 }
 
 static inline void destroy_http_response_status(struct http_response_status* st) {
     st->code = HTTP_STATUS_UNSUPPORTED;
-    qbuf_ref_destroy(&st->text);
-    qbuf_ref_destroy(&st->http_version);
+    qbuf_ref_reset(&st->text);
+    qbuf_ref_reset(&st->http_version);
 }
 
 int http_response_init(struct http_response* res) {
     init_http_response_status(&res->status_line);
     http_header_init(&res->header);
-    qbuf_ref_init(&res->content);
+    qbuf_ref_reset(&res->content);
     qbuf_init(&res->raw_data);
     return 0;
 }
@@ -84,7 +84,7 @@ int http_response_init(struct http_response* res) {
 void http_response_destroy(struct http_response* res) {
     destroy_http_response_status(&res->status_line);
     http_header_destroy(&res->header);
-    qbuf_ref_destroy(&res->content);
+    qbuf_ref_reset(&res->content);
     qbuf_destroy(&res->raw_data);
 }
 
