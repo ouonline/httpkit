@@ -20,11 +20,7 @@ int http_decode_url(const char* src, unsigned int src_size,
                 return HRE_URLDECODE;
             }
 
-            if (nhex2int(src, 2, &ch) != 0) {
-                return HRE_URLDECODE;
-            }
-
-            *dst_cursor = ch;
+            *dst_cursor = nhex2long(src, 2);
             src += 2;
         } else {
             *dst_cursor = *src;
