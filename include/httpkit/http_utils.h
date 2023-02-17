@@ -5,9 +5,9 @@
 extern "C" {
 #endif
 
-/* returns an error code or the decoded len in `dst`. */
-int http_decode_url(const char* src, unsigned int src_size,
-                    char* dst, unsigned int dst_size);
+#include "cutils/qbuf.h"
+
+int http_url_decode(const char* src, unsigned int src_size, struct qbuf* dst);
 
 #ifdef __cplusplus
 }

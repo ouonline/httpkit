@@ -2,11 +2,15 @@
 #include "httpkit/http_common.h"
 #include "cutils/str_utils.h"
 
-int http_decode_url(const char* src, unsigned int src_size,
-                    char* dst, unsigned int dst_size) {
-    char* dst_cursor = dst;
+int http_url_decode(const char* src, unsigned int src_size, struct qbuf* buf) {
+    int err = qbuf_resize(buf, src_size * 3);
+    if (err) {
+        return HRC_NOMEM;
+    }
+
+    char* dst_cursor = qbuf_data(buf);
     const char* src_end = src + src_size;
-    const char* dst_end = dst + dst_size;
+    const char* dst_end = dst_cursor + qbuf_size(buf);
 
     while (src < src_end && dst_cursor < dst_end) {
         if (*src == '+') {
@@ -17,7 +21,7 @@ int http_decode_url(const char* src, unsigned int src_size,
 
             ++src;
             if (src_end < src + 2) {
-                return HRE_URLDECODE;
+                return HRC_URLDECODE;
             }
 
             *dst_cursor = nhex2long(src, 2);
@@ -30,5 +34,7 @@ int http_decode_url(const char* src, unsigned int src_size,
         ++dst_cursor;
     }
 
-    return (dst_cursor - dst);
+    qbuf_resize(buf, dst_cursor - (char*)qbuf_data(buf));
+
+    return HRC_OK;
 }
