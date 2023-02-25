@@ -36,5 +36,4 @@ int http_header_encode(const struct http_kv_list* header_list, unsigned long con
     qbuf_append(res, "\r\n", 2); /* header end mark */
 
     return HRC_OK;
-
 }
