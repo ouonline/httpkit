@@ -3,6 +3,7 @@
 #include <string.h>
 #include <limits.h>
 
+#include "../src/misc.h"
 #include "httpkit/http_common.h"
 #include "../src/http_header_decode.h"
 
@@ -10,11 +11,10 @@ void test_header_decode1() {
     struct http_kv_ol_list hdr_list;
     http_kv_ol_list_init(&hdr_list);
 
-    unsigned long content_len = ULONG_MAX;
     unsigned long offset = 0;
 
     const char* hdr = "ou: ouonline\r\n\r\n";
-    int rc = http_header_decode(hdr, strlen(hdr), hdr, &hdr_list, &content_len, &offset);
+    int rc = http_header_decode(hdr, strlen(hdr), hdr, &hdr_list, &offset);
     assert(rc == HRC_OK);
     assert(offset == strlen(hdr));
 
@@ -32,11 +32,10 @@ void test_header_decode_with_multiple_spaces() {
     struct http_kv_ol_list hdr_list;
     http_kv_ol_list_init(&hdr_list);
 
-    unsigned long content_len = ULONG_MAX;
     unsigned long offset = 0;
 
     const char* hdr = "ou   :    ouonline\r\n\r\n";
-    int rc = http_header_decode(hdr, strlen(hdr), hdr, &hdr_list, &content_len, &offset);
+    int rc = http_header_decode(hdr, strlen(hdr), hdr, &hdr_list, &offset);
     assert(rc == HRC_OK);
     assert(offset == strlen(hdr));
 
@@ -58,14 +57,11 @@ void test_header_decode_content_len() {
     unsigned long offset = 0;
 
     const char* hdr = "Content-Length: 8\r\n\r\n";
-    int rc = http_header_decode(hdr, strlen(hdr), hdr, &hdr_list, &content_len, &offset);
+    int rc = http_header_decode(hdr, strlen(hdr), hdr, &hdr_list, &offset);
     assert(rc == HRC_OK); /* Content-Length is required */
 
-    struct qbuf_ol* value = http_kv_ol_list_get(&hdr_list, hdr, "Content-Length", 14);
-    assert(value != NULL);
-    assert(value->len == 1);
-    assert(value->off == 16);
-    assert(memcmp(hdr + value->off, "8", 1) == 0);
+    set_content_len(hdr, &hdr_list, &content_len);
+    assert(content_len == 8);
 
     http_kv_ol_list_destroy(&hdr_list);
 }

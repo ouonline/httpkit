@@ -4,11 +4,8 @@
 #include <string.h> /* memcmp() */
 #include <limits.h> /* ULONG_MAX */
 
-#define CONTENT_LENGTH_STR "Content-Length"
-#define CONTENT_LENGTH_LEN 14
-
 static int __header_decode(const char* data, unsigned long len, const char* base,
-                           struct http_kv_ol_list* l, unsigned long* content_len) {
+                           struct http_kv_ol_list* l) {
     const char* cursor = memmem(data, len, ":", 1);
     if (!cursor || cursor == data) {
         return HRC_HEADER;
@@ -26,20 +23,12 @@ static int __header_decode(const char* data, unsigned long len, const char* base
     /* now cursor points to the beginning of header value */
     unsigned int vlen = len - (cursor - data);
 
-    if (*content_len == ULONG_MAX) {
-        if (klen == CONTENT_LENGTH_LEN &&
-            memcmp(data, CONTENT_LENGTH_STR, CONTENT_LENGTH_LEN) == 0) {
-            *content_len = ndec2long(cursor, vlen);
-        }
-    }
-
     return http_kv_ol_list_update(l, base, data - base, klen, cursor - base, vlen);
 }
 
 
 int http_header_decode(const char* data, unsigned long len, const char* base,
-                       struct http_kv_ol_list* l, unsigned long* content_len,
-                       unsigned long* offset) {
+                       struct http_kv_ol_list* l, unsigned long* offset) {
     while (1) {
         const char* cursor = memmem(data, len, "\r\n", 2);
         if (!cursor) {
@@ -52,7 +41,7 @@ int http_header_decode(const char* data, unsigned long len, const char* base,
             return HRC_OK;
         }
 
-        int rc = __header_decode(data, cursor - data, base, l, content_len);
+        int rc = __header_decode(data, cursor - data, base, l);
         if (rc != HRC_OK) {
             return rc;
         }

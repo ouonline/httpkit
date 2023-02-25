@@ -1,6 +1,7 @@
 #include "httpkit/http_common.h"
 #include "httpkit/http_response_decode.h"
 #include "http_header_decode.h"
+#include "misc.h"
 #include "cutils/str_utils.h" /* ndec2long()/memmem() */
 #include <limits.h>
 
@@ -97,13 +98,11 @@ int http_response_decode(struct http_response_decode_context* ctx, const char* d
         }
         case HTTP_RES_EXPECT_HEADER: {
             int rc = http_header_decode(data, len, ctx->base, &ctx->header_list,
-                                        &ctx->content_length, &ctx->offset);
+                                        &ctx->offset);
             if (rc != HRC_OK) {
                 return rc;
             }
-            if (ctx->content_length == ULONG_MAX) {
-                ctx->content_length = 0;
-            }
+            set_content_len(ctx->base, &ctx->header_list, &ctx->content_length);
             ctx->state = HTTP_RES_EXPECT_CONTENT;
         }
         case HTTP_RES_EXPECT_CONTENT: {
