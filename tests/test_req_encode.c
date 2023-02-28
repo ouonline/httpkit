@@ -11,10 +11,10 @@ static void test_req_encode1() {
 
     struct qbuf res;
     qbuf_init(&res);
-    int rc = http_request_encode(&method, &abs_path, NULL, NULL, "Hello", 5, &res);
+    int rc = http_request_encode_head(&method, &abs_path, NULL, NULL, 5, &res);
     assert(rc == HRC_OK);
 
-    const char* expected = "GET /about HTTP/1.1\r\nContent-Length: 5\r\n\r\nHello";
+    const char* expected = "GET /about HTTP/1.1\r\nContent-Length: 5\r\n\r\n";
     assert(qbuf_size(&res) == strlen(expected));
     assert(memcmp(qbuf_data(&res), expected, qbuf_size(&res)) == 0);
 
@@ -31,10 +31,10 @@ static void test_req_encode_with_option() {
 
     struct qbuf res;
     qbuf_init(&res);
-    int rc = http_request_encode(&method, &abs_path, &option_list, NULL, "Hello", 5, &res);
+    int rc = http_request_encode_head(&method, &abs_path, &option_list, NULL, 5, &res);
     assert(rc == HRC_OK);
 
-    const char* expected = "POST /notice?ou=online&foo=bar HTTP/1.1\r\nContent-Length: 5\r\n\r\nHello";
+    const char* expected = "POST /notice?ou=online&foo=bar HTTP/1.1\r\nContent-Length: 5\r\n\r\n";
     assert(qbuf_size(&res) == strlen(expected));
     assert(memcmp(qbuf_data(&res), expected, qbuf_size(&res)) == 0);
 
@@ -52,10 +52,10 @@ static void test_req_encode_with_header() {
 
     struct qbuf res;
     qbuf_init(&res);
-    int rc = http_request_encode(&method, &abs_path, NULL, &header_list, "Hello", 5, &res);
+    int rc = http_request_encode_head(&method, &abs_path, NULL, &header_list, 5, &res);
     assert(rc == HRC_OK);
 
-    const char* expected = "POST /notice HTTP/1.1\r\nou: online\r\nContent-Length: 5\r\n\r\nHello";
+    const char* expected = "POST /notice HTTP/1.1\r\nou: online\r\nContent-Length: 5\r\n\r\n";
     assert(qbuf_size(&res) == strlen(expected));
     assert(memcmp(qbuf_data(&res), expected, qbuf_size(&res)) == 0);
 
@@ -76,10 +76,10 @@ static void test_req_encode_with_option_and_header() {
 
     struct qbuf res;
     qbuf_init(&res);
-    int rc = http_request_encode(&method, &abs_path, &option_list, &header_list, "Hello", 5, &res);
+    int rc = http_request_encode_head(&method, &abs_path, &option_list, &header_list, 5, &res);
     assert(rc == HRC_OK);
 
-    const char* expected = "POST /notice?ou=online&foo=bar HTTP/1.1\r\nou: online\r\nContent-Length: 5\r\n\r\nHello";
+    const char* expected = "POST /notice?ou=online&foo=bar HTTP/1.1\r\nou: online\r\nContent-Length: 5\r\n\r\n";
     assert(qbuf_size(&res) == strlen(expected));
     assert(memcmp(qbuf_data(&res), expected, qbuf_size(&res)) == 0);
 
@@ -98,10 +98,10 @@ static void test_req_encode_with_abs_path_and_option() {
 
     struct qbuf res;
     qbuf_init(&res);
-    int rc = http_request_encode(&method, &abs_path, NULL, &header_list, "Hello", 5, &res);
+    int rc = http_request_encode_head(&method, &abs_path, NULL, &header_list, 5, &res);
     assert(rc == HRC_OK);
 
-    const char* expected = "POST /notice?ou=online&foo=bar HTTP/1.1\r\nou: online\r\nContent-Length: 5\r\n\r\nHello";
+    const char* expected = "POST /notice?ou=online&foo=bar HTTP/1.1\r\nou: online\r\nContent-Length: 5\r\n\r\n";
     assert(qbuf_size(&res) == strlen(expected));
     assert(memcmp(qbuf_data(&res), expected, qbuf_size(&res)) == 0);
 

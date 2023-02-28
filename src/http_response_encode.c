@@ -84,8 +84,8 @@ static void pack_res_status_line(unsigned int st_code, struct qbuf* res) {
     qbuf_append(res, "\r\n", 2);
 }
 
-int http_response_encode(unsigned int status_code, struct http_kv_list* header_list,
-                         const char* content, unsigned long content_len, struct qbuf* res) {
+int http_response_encode_head(unsigned int status_code, struct http_kv_list* header_list,
+                              unsigned long content_len, struct qbuf* res) {
     if (qbuf_reserve(res, qbuf_size(res) + 128 + content_len) != 0) {
         return HRC_NOMEM;
     }
@@ -95,10 +95,6 @@ int http_response_encode(unsigned int status_code, struct http_kv_list* header_l
     int rc = http_header_encode(header_list, content_len, res);
     if (rc != HRC_OK) {
         return rc;
-    }
-
-    if (content_len > 0) {
-        qbuf_append(res, content, content_len);
     }
 
     return HRC_OK;
