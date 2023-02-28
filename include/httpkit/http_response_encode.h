@@ -7,8 +7,8 @@ extern "C" {
 
 #include "http_kv_list.h"
 
-int http_response_encode(unsigned int status_code, struct http_kv_list* header_list,
-                         const char* content, unsigned long content_len, struct qbuf* res);
+int http_response_encode_head(unsigned int status_code, struct http_kv_list* header_list,
+                              unsigned long content_len, struct qbuf* res);
 
 #ifdef __cplusplus
 }

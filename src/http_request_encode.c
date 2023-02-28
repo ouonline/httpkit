@@ -49,10 +49,10 @@ static int __append_req_line(const struct qbuf_ref* method, const struct qbuf_re
     return HRC_OK;
 }
 
-int http_request_encode(const struct qbuf_ref* method, const struct qbuf_ref* abs_path,
-                        const struct http_kv_list* option_list,
-                        const struct http_kv_list* header_list,
-                        const char* content, unsigned long content_len, struct qbuf* res) {
+int http_request_encode_head(const struct qbuf_ref* method, const struct qbuf_ref* abs_path,
+                             const struct http_kv_list* option_list,
+                             const struct http_kv_list* header_list,
+                             unsigned long content_len, struct qbuf* res) {
     int err = qbuf_reserve(res, qbuf_size(res) + 128 + content_len);
     if (err) {
         return HRC_NOMEM;
@@ -66,10 +66,6 @@ int http_request_encode(const struct qbuf_ref* method, const struct qbuf_ref* ab
     rc = http_header_encode(header_list, content_len, res);
     if (rc != HRC_OK) {
         return rc;
-    }
-
-    if (content_len > 0) {
-        qbuf_append(res, content, content_len);
     }
 
     return HRC_OK;

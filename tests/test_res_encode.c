@@ -10,7 +10,7 @@ void test_res_encode1() {
 
     struct qbuf res;
     qbuf_init(&res);
-    int rc = http_response_encode(200, NULL, NULL, 0, &res);
+    int rc = http_response_encode_head(200, NULL, 0, &res);
     assert(rc == HRC_OK);
 
     const char* expected = "HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n";
