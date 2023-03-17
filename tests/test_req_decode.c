@@ -146,10 +146,23 @@ void test_req_decode_no_content_len() {
     http_request_decode_context_destroy(&ctx);
 }
 
+void test_req_decode_invalid_content_len() {
+    const char* req = "GET /about?foo=bar&bar=baz HTTP/1.1\r\nabc: defg\r\nContent-Length: 111\r\n\r\n";
+
+    struct http_request_decode_context ctx;
+    http_request_decode_context_init(&ctx);
+
+    int rc = http_request_decode(&ctx, req, strlen(req));
+    assert(rc == HRC_MORE_DATA);
+
+    http_request_decode_context_destroy(&ctx);
+}
+
 void test_req_decode() {
     test_req_decode1();
     test_req_decode_option();
     test_req_decode_header();
     test_req_decode_more_data();
     test_req_decode_no_content_len();
+    test_req_decode_invalid_content_len();
 }

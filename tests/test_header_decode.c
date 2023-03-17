@@ -53,7 +53,7 @@ void test_header_decode_content_len() {
     struct http_kv_ol_list hdr_list;
     http_kv_ol_list_init(&hdr_list);
 
-    unsigned long content_len = ULONG_MAX;
+    unsigned long content_len = 0;
     unsigned long offset = 0;
 
     const char* hdr = "Content-Length: 8\r\n\r\n";
