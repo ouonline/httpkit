@@ -10,7 +10,6 @@
 #include "misc.h"
 #include "cutils/str_utils.h" /* memmem() */
 #include <stdlib.h>
-#include <limits.h> /* ULONG_MAX */
 
 /* ------------------------------------------------------------------------- */
 
@@ -167,7 +166,7 @@ void http_request_decode_context_init(struct http_request_decode_context* ctx) {
     __request_line_init(&ctx->req_line);
     http_kv_ol_list_init(&ctx->header_list);
     ctx->content_offset = 0;
-    ctx->content_length = ULONG_MAX;
+    ctx->content_length = 0;
 }
 
 void http_request_decode_context_destroy(struct http_request_decode_context* ctx) {
@@ -177,7 +176,7 @@ void http_request_decode_context_destroy(struct http_request_decode_context* ctx
     __reqeust_line_destroy(&ctx->req_line);
     http_kv_ol_list_destroy(&ctx->header_list);
     ctx->content_offset = 0;
-    ctx->content_length = ULONG_MAX;
+    ctx->content_length = 0;
 }
 
 int http_request_decode(struct http_request_decode_context* ctx, const char* data,
@@ -211,11 +210,14 @@ int http_request_decode(struct http_request_decode_context* ctx, const char* dat
             ctx->state = HTTP_REQ_EXPECT_HEADER;
         }
         case HTTP_REQ_EXPECT_HEADER: {
+            unsigned long offset_before = ctx->offset;
             int rc = http_header_decode(data, len, ctx->base, &ctx->header_list,
                                         &ctx->offset);
             if (rc != HRC_OK) {
                 return rc;
             }
+
+            len -= (ctx->offset - offset_before);
             set_content_len(ctx->base, &ctx->header_list, &ctx->content_length);
             ctx->state = HTTP_REQ_EXPECT_CONTENT;
         }

@@ -3,7 +3,6 @@
 #include "http_header_decode.h"
 #include "misc.h"
 #include "cutils/str_utils.h" /* ndec2long()/memmem() */
-#include <limits.h>
 
 static void __http_response_status_line_reset(struct http_response_status_line* st) {
     st->code = 0;
@@ -18,7 +17,7 @@ int http_response_decode_context_init(struct http_response_decode_context* ctx) 
     __http_response_status_line_reset(&ctx->status_line);
     http_kv_ol_list_init(&ctx->header_list);
     ctx->content_offset = 0;
-    ctx->content_length = ULONG_MAX;
+    ctx->content_length = 0;
     return 0;
 }
 
@@ -29,7 +28,7 @@ void http_response_decode_context_destroy(struct http_response_decode_context* c
     __http_response_status_line_reset(&ctx->status_line);
     http_kv_ol_list_destroy(&ctx->header_list);
     ctx->content_offset = 0;
-    ctx->content_length = ULONG_MAX;
+    ctx->content_length = 0;
 }
 
 /* Status-Line = HTTP-Version SP Status-Code SP Reason-Phrase CRLF */
@@ -97,11 +96,14 @@ int http_response_decode(struct http_response_decode_context* ctx, const char* d
             ctx->state = HTTP_RES_EXPECT_HEADER;
         }
         case HTTP_RES_EXPECT_HEADER: {
+            unsigned long offset_before = ctx->offset;
             int rc = http_header_decode(data, len, ctx->base, &ctx->header_list,
                                         &ctx->offset);
             if (rc != HRC_OK) {
                 return rc;
             }
+
+            len -= (ctx->offset - offset_before);
             set_content_len(ctx->base, &ctx->header_list, &ctx->content_length);
             ctx->state = HTTP_RES_EXPECT_CONTENT;
         }

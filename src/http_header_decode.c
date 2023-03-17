@@ -2,7 +2,6 @@
 #include "http_header_decode.h"
 #include "cutils/str_utils.h" /* ndec2long()/memmem() */
 #include <string.h> /* memcmp() */
-#include <limits.h> /* ULONG_MAX */
 
 static int __header_decode(const char* data, unsigned long len, const char* base,
                            struct http_kv_ol_list* l) {
