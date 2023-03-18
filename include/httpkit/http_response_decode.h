@@ -22,7 +22,7 @@ struct http_response_decode_context {
     int state;
 
     const char* base;
-    unsigned long offset;
+    unsigned long offset; /* last valid pos */
 
     struct http_response_status_line status_line;
     struct http_kv_ol_list header_list;
@@ -35,6 +35,12 @@ int http_response_decode_context_init(struct http_response_decode_context*);
 void http_response_decode_context_destroy(struct http_response_decode_context*);
 int http_response_decode(struct http_response_decode_context*, const char* data,
                          unsigned long len);
+
+/* update buffers ptr to `base`. Note that `http_response_decode()` will save the `data` addr. */
+static inline void http_response_set_buffer_addr(struct http_response_decode_context* ctx,
+                                                 const char* data) {
+    ctx->base = data;
+}
 
 unsigned int http_response_get_status_code(const struct http_response_decode_context*);
 void http_response_get_status_text(const struct http_response_decode_context*, struct qbuf_ref* res);

@@ -23,7 +23,7 @@ struct http_request_decode_context {
     int state;
 
     const char* base;
-    unsigned long offset; /* last pos */
+    unsigned long offset; /* last valid pos */
 
     struct http_request_line req_line;
     struct http_kv_ol_list header_list;
@@ -38,6 +38,12 @@ void http_request_decode_context_init(struct http_request_decode_context*);
 void http_request_decode_context_destroy(struct http_request_decode_context*);
 int http_request_decode(struct http_request_decode_context*, const char* data,
                         unsigned long len);
+
+/* update buffers ptr to `base`. Note that `http_request_decode()` will save the `data` addr. */
+static inline void http_request_set_buffer_ptr(struct http_request_decode_context* ctx,
+                                               const char* data) {
+    ctx->base = data;
+}
 
 void http_request_get_method(const struct http_request_decode_context*,
                              struct qbuf_ref* res);
