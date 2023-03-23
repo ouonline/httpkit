@@ -2,7 +2,6 @@
 #include "httpkit/http_response_decode.h"
 #include "http_header_decode.h"
 #include "misc.h"
-#include "cutils/str_utils.h" /* ndec2long()/memmem() */
 
 static void __http_response_status_line_reset(struct http_response_status_line* st) {
     st->code = 0;
@@ -32,37 +31,59 @@ void http_response_decode_context_destroy(struct http_response_decode_context* c
 }
 
 /* Status-Line = HTTP-Version SP Status-Code SP Reason-Phrase CRLF */
-static int __status_line_decode(const char* data, unsigned int len,
-                                struct http_response_status_line* st_line) {
-    const char* base = data;
-    const char* cursor = memmem(data, len, " ", 1);
-    if (!cursor) {
-        return HRC_RESLINE;
+static int __status_line_decode(const char* base, unsigned long len,
+                                struct http_response_status_line* l,
+                                unsigned long* offset) {
+    const char* last_pos;
+    const char* cursor = base;
+    const char* end = base + len;
+
+    l->version.off = 0;
+    while (*cursor != ' ') {
+        ++cursor;
+        if (cursor == end) {
+            return HRC_MORE_DATA;
+        }
+    }
+    l->version.len = cursor - base;
+
+    ++cursor; /* skips ' ' */
+    last_pos = cursor;
+    l->code = 0;
+    while (1) {
+        if (cursor == end) {
+            return HRC_MORE_DATA;
+        }
+        if (*cursor == ' ') {
+            break;
+        }
+        if (*cursor < '0' || *cursor > '9') {
+            return HRC_RESLINE;
+        }
+        l->code = l->code * 10 + (*cursor - '0');
+        ++cursor;
     }
 
-    st_line->version.off = 0;
-    st_line->version.len = cursor - data;
-
-    len -= (cursor - data + 1);
-    data = cursor + 1; /* skip space */
-
-    cursor = memmem(data, len, " ", 1);
-    if (!cursor) {
-        return HRC_RESLINE;
+    l->text.off = cursor + 1 - base;
+    while (1) {
+        ++cursor;
+        if (cursor == end) {
+            return HRC_MORE_DATA;
+        }
+        if (*cursor == '\r') {
+            l->text.len = cursor - base - l->text.off;
+            ++cursor;
+            if (cursor == end) {
+                return HRC_MORE_DATA;
+            }
+            if (*cursor == '\n') {
+                (*offset) += (cursor + 1 - base);
+                return HRC_OK;
+            }
+        }
     }
-    if (cursor - data != 3) { /* 3 digits */
-        return HRC_RESLINE;
-    }
 
-    st_line->code = ndec2long(data, 3);
-
-    len -= (cursor - data + 1);
-    data = cursor + 1;
-
-    st_line->text.off = data - base;
-    st_line->text.len = len;
-
-    return HRC_OK;
+    return HRC_RESLINE; /* unreachable */
 }
 
 int http_response_decode(struct http_response_decode_context* ctx, const char* data,
@@ -77,33 +98,25 @@ int http_response_decode(struct http_response_decode_context* ctx, const char* d
 
     switch (ctx->state) {
         case HTTP_RES_EXPECT_STATUS_LINE: {
-            const char* cursor = memmem(data, len, "\r\n", 2);
-            if (!cursor) {
-                return HRC_MORE_DATA;
-            }
-            if (cursor == data) {
-                return HRC_RESLINE;
-            }
-
-            int rc = __status_line_decode(data, cursor - data, &ctx->status_line);
+            unsigned long parsed_len = 0;
+            int rc = __status_line_decode(data, len, &ctx->status_line, &parsed_len);
+            len -= parsed_len;
+            data += parsed_len;
+            ctx->offset += parsed_len;
             if (rc != HRC_OK) {
                 return rc;
             }
-
-            len -= (cursor + 2 - data);
-            ctx->offset += (cursor + 2 - data);
-            data = cursor + 2 /* skip '\r\n' */;
             ctx->state = HTTP_RES_EXPECT_HEADER;
         }
         case HTTP_RES_EXPECT_HEADER: {
-            unsigned long offset_before = ctx->offset;
-            int rc = http_header_decode(data, len, ctx->base, &ctx->header_list,
-                                        &ctx->offset);
+            unsigned long parsed_len = 0;
+            int rc = http_header_decode(data, len, ctx->base, &ctx->header_list, &parsed_len);
+            len -= parsed_len;
+            ctx->offset += parsed_len;
             if (rc != HRC_OK) {
                 return rc;
             }
 
-            len -= (ctx->offset - offset_before);
             set_content_len(ctx->base, &ctx->header_list, &ctx->content_length);
             ctx->state = HTTP_RES_EXPECT_CONTENT;
         }
@@ -120,22 +133,6 @@ int http_response_decode(struct http_response_decode_context* ctx, const char* d
     return HRC_OK;
 }
 
-unsigned int http_response_get_status_code(const struct http_response_decode_context* ctx) {
-    return ctx->status_line.code;
-}
-
-void http_response_get_status_text(const struct http_response_decode_context* ctx,
-                                   struct qbuf_ref* res) {
-    res->base = ctx->base + ctx->status_line.text.off;
-    res->size = ctx->status_line.text.len;
-}
-
-void http_response_get_text(const struct http_response_decode_context* ctx,
-                            struct qbuf_ref* res) {
-    res->base = ctx->base + ctx->status_line.text.off;
-    res->size = ctx->status_line.text.len;
-}
-
 void http_response_get_header(const struct http_response_decode_context* ctx, const char* key,
                               unsigned int klen, struct qbuf_ref* value) {
     struct qbuf_ol* v = http_kv_ol_list_get(&ctx->header_list, ctx->base, key, klen);
@@ -146,29 +143,4 @@ void http_response_get_header(const struct http_response_decode_context* ctx, co
         value->base = NULL;
         value->size = 0;
     }
-}
-
-int http_response_for_each_header(const struct http_response_decode_context* ctx, void* arg,
-                                 int (*f)(void* arg,
-                                          const char* k, unsigned int klen,
-                                          const char* v, unsigned int vlen)) {
-    return http_kv_ol_list_for_each(&ctx->header_list, ctx->base, arg, f);
-}
-
-void http_response_get_content(const struct http_response_decode_context* ctx,
-                               struct qbuf_ref* ref) {
-    if (ctx->state == HTTP_RES_EXPECT_END) {
-        ref->base = ctx->base + ctx->content_offset;
-        ref->size = ctx->content_length;
-    } else {
-        ref->base = NULL;
-        ref->size = 0;
-    }
-}
-
-unsigned long http_response_get_size(const struct http_response_decode_context* ctx) {
-    if (ctx->state == HTTP_RES_EXPECT_END) {
-        return ctx->offset;
-    }
-    return 0;
 }

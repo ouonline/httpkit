@@ -7,7 +7,7 @@
 
 int http_header_encode(const struct http_kv_list* header_list, unsigned long content_len,
                        struct qbuf* res) {
-    int no_content_len = 1;
+    int content_len_needed = (content_len > 0);
 
     if (header_list) {
         struct list_node* cur;
@@ -18,16 +18,16 @@ int http_header_encode(const struct http_kv_list* header_list, unsigned long con
             qbuf_append(res, qbuf_data(&h->value), qbuf_size(&h->value));
             qbuf_append(res, "\r\n", 2);
 
-            if (no_content_len) {
+            if (content_len_needed) {
                 if (qbuf_size(&h->key) == CONTENT_LENGTH_LEN &&
                     memcmp(qbuf_data(&h->key), CONTENT_LENGTH_STR, CONTENT_LENGTH_LEN) == 0) {
-                    no_content_len = 0;
+                    content_len_needed = 0;
                 }
             }
         }
     }
 
-    if (no_content_len) {
+    if (content_len_needed) {
         char tmp[48];
         int tmplen = sprintf(tmp, CONTENT_LENGTH_STR ": %lu\r\n", content_len);
         qbuf_append(res, tmp, tmplen);
