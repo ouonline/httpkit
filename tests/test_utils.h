@@ -4,11 +4,11 @@
 #include "httpkit/http_kv_list.h"
 #include <stdio.h> /* sprintf() */
 
-static inline void make_option1(struct http_kv_list* opts) {
+static inline void make_query1(struct http_kv_list* opts) {
     http_kv_list_update(opts, "ou", 2, "online", 6);
 }
 
-static inline void make_option2(struct http_kv_list* opts) {
+static inline void make_query2(struct http_kv_list* opts) {
     http_kv_list_update(opts, "ou", 2, "online", 6);
     http_kv_list_update(opts, "foo", 3, "bar", 3);
 }

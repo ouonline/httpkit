@@ -9,6 +9,16 @@ extern "C" {
 
 int http_url_decode(const char* src, unsigned int src_size, struct qbuf* dst);
 
+struct http_response_status {
+    unsigned int code;
+    const char* code_str;
+    unsigned int code_len;
+    const char* text_str;
+    unsigned int text_len;
+};
+
+const struct http_response_status* http_response_status_lookup(unsigned int code);
+
 #ifdef __cplusplus
 }
 #endif

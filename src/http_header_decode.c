@@ -1,52 +1,144 @@
 #include "httpkit/http_common.h"
 #include "http_header_decode.h"
-#include "cutils/str_utils.h" /* ndec2long()/memmem() */
-#include <string.h> /* memcmp() */
-
-static int __header_decode(const char* data, unsigned long len, const char* base,
-                           struct http_kv_ol_list* l) {
-    const char* cursor = memmem(data, len, ":", 1);
-    if (!cursor || cursor == data) {
-        return HRC_HEADER;
-    }
-
-    /* skips space(s) before ':' */
-    const char* key_end;
-    for (key_end = cursor; key_end > data && *(key_end - 1) == ' '; --key_end);
-
-    unsigned int klen = key_end - data;
-
-    /* skips space(s) */
-    const char* end = data + len;
-    for (++cursor /* skip ':' */; cursor < end && *cursor == ' '; ++cursor);
-    /* now cursor points to the beginning of header value */
-    unsigned int vlen = len - (cursor - data);
-
-    return http_kv_ol_list_update(l, base, data - base, klen, cursor - base, vlen);
-}
-
 
 int http_header_decode(const char* data, unsigned long len, const char* base,
                        struct http_kv_ol_list* l, unsigned long* offset) {
+    int rc;
+    const char* cursor = data;
+    const char* end = data + len;
+    unsigned long key_off, key_len, value_off, value_len;
+
+HEADER_ITEM_BEGIN:
+    key_off = key_len = value_off = value_len = 0;
     while (1) {
-        const char* cursor = memmem(data, len, "\r\n", 2);
-        if (!cursor) {
+        if (cursor == end) {
             return HRC_MORE_DATA;
         }
-
-        /* end of headers */
-        if (cursor == data) {
-            (*offset) += 2;
-            return HRC_OK;
+        if (*cursor != ' ' && *cursor != '\t') {
+            break;
         }
-
-        int rc = __header_decode(data, cursor - data, base, l);
-        if (rc != HRC_OK) {
-            return rc;
-        }
-
-        len -= (cursor + 2 - data);
-        (*offset) += (cursor + 2 - data);
-        data = cursor + 2;
+        ++cursor;
     }
+    if (*cursor == ':' /* empty key */ || *cursor == '\n') {
+        return HRC_HEADER;
+    }
+    if (*cursor == '\r') {
+        goto HEADER_ITEM_EMPTY_r; /* empty header */
+    }
+    key_off = cursor - base;
+
+    /* HEADER_ITEM_KEY */
+    while (1) {
+        ++cursor;
+        if (cursor == end) {
+            return HRC_MORE_DATA;
+        }
+        if (*cursor == '\r' || *cursor == '\n') {
+            return HRC_HEADER;
+        }
+        if (*cursor == ' ' || *cursor == '\t') {
+            key_len = cursor - base - key_off;
+            /* space(s) between key and colon */
+            do {
+                ++cursor;
+                if (cursor == end) {
+                    return HRC_MORE_DATA;
+                }
+            } while (*cursor == ' ' || *cursor == '\t');
+            if (*cursor == ':') {
+                break;
+            }
+            return HRC_HEADER;
+        }
+        if (*cursor == ':') {
+            key_len = cursor - base - key_off;
+            break;
+        }
+    }
+
+HEADER_ITEM_COLON:
+    ++cursor;
+    if (cursor == end) {
+        return HRC_MORE_DATA;
+    }
+    if (*cursor == '\r' || *cursor == '\n') {
+        return HRC_HEADER;
+    }
+    if (*cursor != ' ' && *cursor != '\t') {
+        value_off = cursor - base;
+        goto HEADER_ITEM_VALUE;
+    }
+
+    /* space(s) between colon and value */
+    do {
+        ++cursor;
+        if (cursor == end) {
+            return HRC_MORE_DATA;
+        }
+        if (*cursor == '\r' || *cursor == '\n') {
+            return HRC_HEADER;
+        }
+    } while (*cursor == ' ' || *cursor == '\t');
+    value_off = cursor - base;
+
+HEADER_ITEM_VALUE:
+    while (1) {
+        ++cursor;
+        if (cursor == end) {
+            return HRC_MORE_DATA;
+        }
+        if (*cursor == ' ' || *cursor == '\t') {
+            value_len = cursor - base - value_off;
+            /* space(s) after value */
+            do {
+                ++cursor;
+                if (cursor == end) {
+                    return HRC_MORE_DATA;
+                }
+            } while (*cursor == ' ' || *cursor == '\t');
+            if (*cursor == '\r') {
+                break;
+            }
+            return HRC_HEADER;
+        }
+        if (*cursor == '\n') {
+            return HRC_HEADER;
+        }
+        if (*cursor == '\r') {
+            value_len = cursor - base - value_off;
+            break;
+        }
+    }
+
+HEADER_ITEM_r:
+    ++cursor;
+    if (cursor == end) {
+        return HRC_MORE_DATA;
+    }
+    if (*cursor != '\n') {
+        return HRC_HEADER;
+    }
+
+    /* HEADER_ITEM_END */
+    rc = http_kv_ol_list_update(l, base, key_off, key_len,
+                                value_off, value_len);
+    if (rc != HRC_OK) {
+        return rc;
+    }
+
+    ++cursor; /* skips '\n' */
+    (*offset) += (cursor - data);
+    data = cursor;
+    goto HEADER_ITEM_BEGIN;
+
+HEADER_ITEM_EMPTY_r:
+    ++cursor;
+    if (cursor == end) {
+        return HRC_MORE_DATA;
+    }
+    if (*cursor == '\n') {
+        (*offset) += (cursor - data) + 1;
+        return HRC_OK;
+    }
+    return HRC_HEADER;
 }

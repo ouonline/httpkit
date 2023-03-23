@@ -32,11 +32,19 @@ static void test_header_encode_without_content_length() {
     make_header1_without_content_length(&header_list);
 
     struct qbuf res;
+
+    /* no Content-Length if content len is 0 */
     qbuf_init(&res);
     int rc = http_header_encode(&header_list, 0, &res);
     assert(rc == HRC_OK);
+    const char* expected = "ou: online\r\n\r\n";
+    assert(qbuf_size(&res) == strlen(expected));
+    assert(memcmp(qbuf_data(&res), expected, qbuf_size(&res)) == 0);
 
-    const char* expected = "ou: online\r\nContent-Length: 0\r\n\r\n";
+    qbuf_init(&res);
+    rc = http_header_encode(&header_list, 234, &res);
+    assert(rc == HRC_OK);
+    expected = "ou: online\r\nContent-Length: 234\r\n\r\n";
     assert(qbuf_size(&res) == strlen(expected));
     assert(memcmp(qbuf_data(&res), expected, qbuf_size(&res)) == 0);
 
