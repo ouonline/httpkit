@@ -17,8 +17,7 @@ void test_res_encode1() {
     qbuf_init(&res);
     int rc = http_response_encode_head(st->code, st->text_str, st->text_len, NULL, 0, &res);
     assert(rc == HRC_OK);
-    /* no Content-Length if content len is 0 */
-    const char* expected = "HTTP/1.1 404 Not Found\r\n\r\n";
+    const char* expected = "HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\n\r\n";
     assert(qbuf_size(&res) == strlen(expected));
     assert(memcmp(qbuf_data(&res), expected, qbuf_size(&res)) == 0);
 

@@ -7,7 +7,7 @@
 
 int http_header_encode(const struct http_kv_list* header_list, unsigned long content_len,
                        struct qbuf* res) {
-    int content_len_needed = (content_len > 0);
+    int content_len_needed = 1;
 
     if (header_list) {
         struct list_node* cur;

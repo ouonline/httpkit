@@ -82,31 +82,23 @@ HEADER_ITEM_COLON:
     value_off = cursor - base;
 
 HEADER_ITEM_VALUE:
-    while (1) {
-        ++cursor;
-        if (cursor == end) {
-            return HRC_MORE_DATA;
-        }
-        if (*cursor == ' ' || *cursor == '\t') {
-            value_len = cursor - base - value_off;
-            /* space(s) after value */
-            do {
-                ++cursor;
-                if (cursor == end) {
-                    return HRC_MORE_DATA;
-                }
-            } while (*cursor == ' ' || *cursor == '\t');
+    {
+        const char* last_non_space = cursor;
+        while (1) {
+            ++cursor;
+            if (cursor == end) {
+                return HRC_MORE_DATA;
+            }
+            if (*cursor == '\n') {
+                return HRC_HEADER;
+            }
             if (*cursor == '\r') {
+                value_len = last_non_space + 1 - base - value_off;
                 break;
             }
-            return HRC_HEADER;
-        }
-        if (*cursor == '\n') {
-            return HRC_HEADER;
-        }
-        if (*cursor == '\r') {
-            value_len = cursor - base - value_off;
-            break;
+            if (*cursor != ' ' && *cursor != '\t') {
+                last_non_space = cursor;
+            }
         }
     }
 
