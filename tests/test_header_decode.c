@@ -155,14 +155,14 @@ void test_header_decode_spaces_after_value() {
     const char* value = hdr + h->off;
     unsigned long vlen = h->len;
     assert(vlen == 8);
-    assert(memcmp(value, "ouonline", 8) == 0);
+    assert(memcmp(value, "ouonline", vlen) == 0);
 
     h = http_kv_ol_list_get(&hdr_list, hdr, "foo", 3);
     assert(h != NULL);
     value = hdr + h->off;
     vlen = h->len;
     assert(vlen == 3);
-    assert(memcmp(value, "bar", 3) == 0);
+    assert(memcmp(value, "bar", vlen) == 0);
 
     http_kv_ol_list_destroy(&hdr_list);
 }
@@ -174,12 +174,29 @@ void test_header_decode_content_len() {
     unsigned long content_len = 0;
     unsigned long offset = 0;
 
-    const char* hdr = "Content-Length: 8\r\n\r\n";
+    const char* hdr = "Content-Length: 8  \t \r\n\r\n";
     int rc = http_header_decode(hdr, strlen(hdr), hdr, &hdr_list, &offset);
     assert(rc == HRC_OK); /* Content-Length is required */
 
     set_content_len(hdr, &hdr_list, &content_len);
     assert(content_len == 8);
+
+    http_kv_ol_list_destroy(&hdr_list);
+}
+
+void test_header_decode_spaces_in_value() {
+    struct http_kv_ol_list hdr_list;
+    http_kv_ol_list_init(&hdr_list);
+
+    unsigned long offset = 0;
+    const char* hdr = "Accept-Encoding: gzip, json, deflate \r\n\r\n";
+    int rc = http_header_decode(hdr, strlen(hdr), hdr, &hdr_list, &offset);
+    assert(rc == HRC_OK);
+
+    struct qbuf_ol* value = http_kv_ol_list_get(&hdr_list, hdr, "Accept-Encoding", 15);
+    assert(value != NULL);
+    assert(value->len == 19);
+    assert(memcmp(hdr + value->off, "gzip, json, deflate", value->len) == 0);
 
     http_kv_ol_list_destroy(&hdr_list);
 }
@@ -244,6 +261,7 @@ void test_header_decode() {
     test_header_decode_spaces_between_colon_and_value();
     test_header_decode_spaces_after_value();
     test_header_decode_content_len();
+    test_header_decode_spaces_in_value();
     test_header_decode_empty();
     test_header_decode_empty2();
     test_header_decode_more_data();
