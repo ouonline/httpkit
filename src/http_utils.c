@@ -17,8 +17,6 @@ int http_url_decode(const char* src, unsigned int src_size, struct qbuf* buf) {
             *dst_cursor = ' ';
             ++src;
         } else if (*src == '%') {
-            int ch = 0;
-
             ++src;
             if (src_end < src + 2) {
                 return HRC_URLDECODE;

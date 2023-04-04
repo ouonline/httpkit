@@ -3,9 +3,7 @@
 
 #include "httpkit/http_kv_ol_list.h"
 #include "cutils/str_utils.h"
-
-#define CONTENT_LENGTH_STR "Content-Length"
-#define CONTENT_LENGTH_LEN 14
+#include "def.h"
 
 static inline int __check_content_length(void* arg, const char* k, unsigned int klen,
                                          const char* v, unsigned int vlen) {

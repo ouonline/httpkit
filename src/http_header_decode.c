@@ -56,7 +56,7 @@ HEADER_ITEM_BEGIN:
         }
     }
 
-HEADER_ITEM_COLON:
+    /* HEADER_ITEM_COLON */
     ++cursor;
     if (cursor == end) {
         return HRC_MORE_DATA;
@@ -102,7 +102,7 @@ HEADER_ITEM_VALUE:
         }
     }
 
-HEADER_ITEM_r:
+    /* HEADER_ITEM_r */
     ++cursor;
     if (cursor == end) {
         return HRC_MORE_DATA;

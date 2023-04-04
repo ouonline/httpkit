@@ -34,7 +34,6 @@ void http_response_decode_context_destroy(struct http_response_decode_context* c
 static int __status_line_decode(const char* base, unsigned long len,
                                 struct http_response_status_line* l,
                                 unsigned long* offset) {
-    const char* last_pos;
     const char* cursor = base;
     const char* end = base + len;
 
@@ -48,7 +47,6 @@ static int __status_line_decode(const char* base, unsigned long len,
     l->version.len = cursor - base;
 
     ++cursor; /* skips ' ' */
-    last_pos = cursor;
     l->code = 0;
     while (1) {
         if (cursor == end) {

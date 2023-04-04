@@ -1,5 +1,5 @@
-#ifndef __SRC_HTTP_KV_OL_LIST_H__
-#define __SRC_HTTP_KV_OL_LIST_H__
+#ifndef __HTTPKIT_HTTP_KV_OL_LIST_H__
+#define __HTTPKIT_HTTP_KV_OL_LIST_H__
 
 #include "cutils/list.h"
 #include "cutils/qbuf_ol.h"

@@ -1,36 +1,30 @@
 #include <stdio.h> /* snprintf() */
-#include "httpkit/http_common.h"
 #include "httpkit/http_response_encode.h"
 #include "http_header_encode.h"
+#include "def.h"
 
-#define HTTP_VERSION_STR "HTTP/1.1"
-#define HTTP_VERSION_STR_LEN 8
+#define MAX_CODE_LEN 5
 
-static void pack_res_status_line(unsigned int st_code, const char* text, unsigned int text_len,
-                                 struct qbuf* res) {
-    qbuf_append(res, HTTP_VERSION_STR, HTTP_VERSION_STR_LEN);
+int http_response_encode_status_line(struct qbuf* res, unsigned int code,
+                                     const char* text, unsigned int text_len) {
+    char code_str[MAX_CODE_LEN + 1];
+    int code_len = snprintf(code_str, MAX_CODE_LEN + 1, " %u ", code);
 
-    char code_str[16];
-    int code_len = snprintf(code_str, 16, " %u ", st_code);
-    qbuf_append(res, code_str, code_len);
-    qbuf_append(res, text, text_len);
-    qbuf_append(res, "\r\n", 2);
-}
-
-int http_response_encode_head(unsigned int status_code,
-                              const char* text, unsigned int text_len,
-                              const struct http_kv_list* header_list,
-                              unsigned long content_len, struct qbuf* res) {
-    if (qbuf_reserve(res, qbuf_size(res) + 128 + content_len) != 0) {
+    int ret = qbuf_reserve(res, HTTP_VERSION_STR_LEN + text_len + MAX_CODE_LEN +
+                           2 /* "\r\n" */);
+    if (ret != 0) {
         return HRC_NOMEM;
     }
 
-    pack_res_status_line(status_code, text, text_len, res);
-
-    int rc = http_header_encode(header_list, content_len, res);
-    if (rc != HRC_OK) {
-        return rc;
-    }
+    qbuf_append(res, HTTP_VERSION_STR, HTTP_VERSION_STR_LEN);
+    qbuf_append(res, code_str, code_len);
+    qbuf_append(res, text, text_len);
+    qbuf_append(res, "\r\n", 2);
 
     return HRC_OK;
+}
+
+int http_response_encode_header(struct qbuf* res, const char* key, unsigned int klen,
+                                const char* value, unsigned int vlen) {
+    return http_header_encode(res, key, klen, value, vlen);
 }
