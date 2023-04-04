@@ -78,7 +78,7 @@ static inline void http_response_get_content(const struct http_response_decode_c
 }
 
 static inline unsigned long http_response_get_size(const struct http_response_decode_context* ctx) {
-    return (ctx->state == HTTP_RES_EXPECT_END) ? ctx->offset : 0;
+    return ctx->offset;
 }
 
 #ifdef __cplusplus

@@ -14,12 +14,16 @@
 static void __request_line_init(struct http_request_line* line) {
     qbuf_ol_reset(&line->method);
     qbuf_ol_reset(&line->abs_path);
+    qbuf_ol_reset(&line->fragment);
+    qbuf_ol_reset(&line->version);
     http_kv_ol_list_init(&line->query_list);
 }
 
 static void __reqeust_line_destroy(struct http_request_line* line) {
     qbuf_ol_reset(&line->method);
     qbuf_ol_reset(&line->abs_path);
+    qbuf_ol_reset(&line->fragment);
+    qbuf_ol_reset(&line->version);
     http_kv_ol_list_destroy(&line->query_list);
 }
 

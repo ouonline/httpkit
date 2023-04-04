@@ -8,10 +8,17 @@ option(HTTPKIT_INSTALL "install headers and libs" ON)
 
 # ----- targets ----- #
 
-file(GLOB HTTPKIT_SRC ${CMAKE_CURRENT_SOURCE_DIR}/src/*.c)
-add_library(httpkit_static STATIC ${HTTPKIT_SRC})
+file(GLOB __HTTPKIT_SRC__ ${CMAKE_CURRENT_SOURCE_DIR}/src/*.c)
+add_library(httpkit_static STATIC ${__HTTPKIT_SRC__})
+unset(__HTTPKIT_SRC__)
+
 target_include_directories(httpkit_static PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
-target_compile_features(httpkit_static PUBLIC cxx_std_11)
+
+if(MSVC)
+    target_compile_options(httpkit_static PRIVATE /W4)
+else()
+    target_compile_options(httpkit_static PRIVATE -Wall -Wextra -Werror -Wno-implicit-fallthrough)
+endif()
 
 # ----- dependencies ----- #
 
@@ -20,7 +27,7 @@ set(FETCHCONTENT_QUIET OFF)
 set(FETCHCONTENT_UPDATES_DISCONNECTED ON)
 
 if(NOT HTTPKIT_DEPS_DIR)
-    get_filename_component(HTTPKIT_DEPS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/deps ABSOLUTE)
+    get_filename_component(HTTPKIT_DEPS_DIR ${CMAKE_CURRENT_BINARY_DIR} ABSOLUTE)
     message("-- `HTTPKIT_DEPS_DIR` is not set. set `HTTPKIT_DEPS_DIR` to `${HTTPKIT_DEPS_DIR}`.")
 endif()
 

@@ -104,7 +104,7 @@ static inline void http_request_get_content(const struct http_request_decode_con
 }
 
 static inline unsigned long http_request_get_size(const struct http_request_decode_context* ctx) {
-    return (ctx->state == HTTP_REQ_EXPECT_END) ? ctx->offset : 0;
+    return ctx->offset;
 }
 
 #ifdef __cplusplus
