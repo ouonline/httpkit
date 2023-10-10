@@ -1,4 +1,4 @@
-#include "httpkit/http_common.h"
+#include "httpkit/http_retcode.h"
 #include "httpkit/http_response_decode.h"
 #include "http_header_decode.h"
 #include "misc.h"
@@ -56,7 +56,7 @@ static int __status_line_decode(const char* base, unsigned long len,
             break;
         }
         if (*cursor < '0' || *cursor > '9') {
-            return HRC_RESLINE;
+            return HRC_RES_LINE;
         }
         l->code = l->code * 10 + (*cursor - '0');
         ++cursor;
@@ -81,7 +81,7 @@ static int __status_line_decode(const char* base, unsigned long len,
         }
     }
 
-    return HRC_RESLINE; /* unreachable */
+    return HRC_RES_LINE; /* unreachable */
 }
 
 int http_response_decode(struct http_response_decode_context* ctx, const char* data,

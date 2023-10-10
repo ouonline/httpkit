@@ -1,5 +1,5 @@
 #include "httpkit/http_utils.h"
-#include "httpkit/http_common.h"
+#include "httpkit/http_retcode.h"
 #include "cutils/str_utils.h"
 
 int http_url_decode(const char* src, unsigned int src_size, struct qbuf* buf) {
@@ -19,7 +19,7 @@ int http_url_decode(const char* src, unsigned int src_size, struct qbuf* buf) {
         } else if (*src == '%') {
             ++src;
             if (src_end < src + 2) {
-                return HRC_URLDECODE;
+                return HRC_URL;
             }
 
             *dst_cursor = nhex2long(src, 2);

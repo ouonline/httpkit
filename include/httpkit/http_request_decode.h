@@ -42,6 +42,11 @@ struct http_request_decode_context {
     unsigned long content_length; /* from header `Content-Length` */
 };
 
+#ifdef __cplusplus
+typedef struct http_request_line HttpRequestLine;
+typedef struct http_request_decode_context HttpRequestDecodeContext;
+#endif
+
 /* ------------------------------------------------------------------------- */
 
 void http_request_decode_context_init(struct http_request_decode_context*);

@@ -4,7 +4,7 @@
  * https://tools.ietf.org/html/rfc3986
  **/
 
-#include "httpkit/http_common.h"
+#include "httpkit/http_retcode.h"
 #include "httpkit/http_request_decode.h"
 #include "http_header_decode.h"
 #include "misc.h"

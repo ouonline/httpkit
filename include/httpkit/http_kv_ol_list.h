@@ -1,6 +1,10 @@
 #ifndef __HTTPKIT_HTTP_KV_OL_LIST_H__
 #define __HTTPKIT_HTTP_KV_OL_LIST_H__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "cutils/list.h"
 #include "cutils/qbuf_ol.h"
 
@@ -14,6 +18,11 @@ struct http_kv_ol_list {
     struct list_node head;
 };
 
+#ifdef __cplusplus
+typedef struct http_kv_ol_node HttpKvOlNode;
+typedef struct http_kv_ol_list HttpKvOlList;
+#endif
+
 void http_kv_ol_list_init(struct http_kv_ol_list*);
 void http_kv_ol_list_destroy(struct http_kv_ol_list*);
 int http_kv_ol_list_update(struct http_kv_ol_list*, const char* base,
@@ -25,5 +34,9 @@ int http_kv_ol_list_for_each(const struct http_kv_ol_list*, const char* base, vo
                              int (*f)(void* arg,
                                       const char* k, unsigned int klen,
                                       const char* v, unsigned int vlen));
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
