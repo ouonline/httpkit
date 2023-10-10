@@ -6,7 +6,7 @@ extern "C" {
 #endif
 
 #include "cutils/qbuf.h"
-#include "http_common.h"
+#include "http_retcode.h"
 
 int http_request_encode_request_line(struct qbuf* res, const char* method, unsigned int method_len,
                                      const char* url, unsigned int url_len);

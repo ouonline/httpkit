@@ -1,5 +1,5 @@
 #include "httpkit/http_kv_ol_list.h"
-#include "httpkit/http_common.h"
+#include "httpkit/http_retcode.h"
 #include <string.h> /* memcmp() */
 #include <stdlib.h> /* malloc/free */
 

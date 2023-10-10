@@ -1,4 +1,4 @@
-#include "httpkit/http_common.h"
+#include "httpkit/http_retcode.h"
 #include "http_header_encode.h"
 
 int http_header_encode(struct qbuf* res, const char* key, unsigned int klen,

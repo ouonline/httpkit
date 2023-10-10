@@ -35,6 +35,13 @@ struct http_response_decode_context {
     unsigned long content_length; /* from header `Content-Length` */
 };
 
+#ifdef __cplusplus
+typedef struct http_response_status_line HttpResponseStatusLine;
+typedef struct http_response_decode_context HttpResponseDecodeContext;
+#endif
+
+/* ------------------------------------------------------------------------- */
+
 int http_response_decode_context_init(struct http_response_decode_context*);
 void http_response_decode_context_destroy(struct http_response_decode_context*);
 int http_response_decode(struct http_response_decode_context*, const char* data,

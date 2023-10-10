@@ -1,4 +1,4 @@
-#include "httpkit/http_common.h"
+#include "httpkit/http_retcode.h"
 #include "http_header_decode.h"
 
 int http_header_decode(const char* data, unsigned long len, const char* base,

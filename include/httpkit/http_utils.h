@@ -17,6 +17,10 @@ struct http_response_status {
     unsigned int text_len;
 };
 
+#ifdef __cplusplus
+typedef struct http_response_status HttpResponseStatus;
+#endif
+
 const struct http_response_status* http_response_status_lookup(unsigned int code);
 
 #ifdef __cplusplus
