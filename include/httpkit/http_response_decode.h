@@ -14,14 +14,6 @@ struct http_response_status_line {
     struct http_item version;
 };
 
-/* values of http_response_decode_context::state */
-enum {
-    HTTP_RES_EXPECT_STATUS_LINE,
-    HTTP_RES_EXPECT_HEADER,
-    HTTP_RES_EXPECT_CONTENT,
-    HTTP_RES_EXPECT_END,
-};
-
 struct http_response_decode_context {
     int state;
 
