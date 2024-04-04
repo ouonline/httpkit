@@ -9,6 +9,18 @@
 #include "http_header_decode.h"
 #include "misc.h"
 
+/* values of http_request_decode_context::state */
+enum {
+    HTTP_REQ_EXPECT_METHOD,
+    HTTP_REQ_EXPECT_ABS_PATH,
+    HTTP_REQ_EXPECT_QUERY,
+    HTTP_REQ_EXPECT_FRAGMENT,
+    HTTP_REQ_EXPECT_VERSION,
+    HTTP_REQ_EXPECT_HEADER,
+    HTTP_REQ_EXPECT_CONTENT,
+    HTTP_REQ_EXPECT_END,
+};
+
 /* ------------------------------------------------------------------------- */
 
 static void __request_line_init(struct http_request_line* line) {
