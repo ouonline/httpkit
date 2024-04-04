@@ -2,7 +2,8 @@
 #include <assert.h>
 
 #include "../src/http_header_encode.h"
-#include "httpkit/http_common.h"
+#include "httpkit/http_retcode.h"
+#include <string.h>
 
 static void test_header_encode1() {
     struct qbuf res;

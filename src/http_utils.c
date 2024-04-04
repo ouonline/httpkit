@@ -1,6 +1,7 @@
 #include "httpkit/http_utils.h"
 #include "httpkit/http_retcode.h"
 #include "cutils/str_utils.h"
+#include <stddef.h> /* NULL */
 
 int http_url_decode(const char* src, unsigned int src_size, struct qbuf* buf) {
     int err = qbuf_resize(buf, src_size * 3);

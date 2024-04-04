@@ -27,7 +27,7 @@ set(FETCHCONTENT_QUIET OFF)
 set(FETCHCONTENT_UPDATES_DISCONNECTED ON)
 
 if(NOT HTTPKIT_DEPS_DIR)
-    get_filename_component(HTTPKIT_DEPS_DIR ${CMAKE_CURRENT_BINARY_DIR} ABSOLUTE)
+    get_filename_component(HTTPKIT_DEPS_DIR ${CMAKE_CURRENT_BINARY_DIR}/deps ABSOLUTE)
     message("-- `HTTPKIT_DEPS_DIR` is not set. set `HTTPKIT_DEPS_DIR` to `${HTTPKIT_DEPS_DIR}`.")
 endif()
 
@@ -39,7 +39,7 @@ if(NOT TARGET cutils_static)
         GIT_TAG master
         SOURCE_DIR ${HTTPKIT_DEPS_DIR}/cutils
         BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/cutils-build
-        SUBBUILD_DIR ${CMAKE_CURRENT_BINARY_DIR}/cutils-subbuild)
+        SUBBUILD_DIR ${HTTPKIT_DEPS_DIR}/cutils-subbuild)
     FetchContent_MakeAvailable(cutils)
 endif()
 

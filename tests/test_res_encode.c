@@ -3,6 +3,7 @@
 
 #include "httpkit/http_response_encode.h"
 #include "httpkit/http_utils.h"
+#include <string.h>
 
 void test_res_encode1() {
     const struct http_response_status* st = http_response_status_lookup(404);
