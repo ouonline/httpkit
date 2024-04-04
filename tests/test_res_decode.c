@@ -1,8 +1,9 @@
 #undef NDEBUG
 #include <assert.h>
 
-#include "httpkit/http_common.h"
+#include "httpkit/http_retcode.h"
 #include "httpkit/http_response_decode.h"
+#include <string.h>
 
 void test_res_decode1() {
     const char* res = "HTTP/1.1 404 Not Found\r\n\r\n";

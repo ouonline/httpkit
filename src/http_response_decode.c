@@ -5,8 +5,8 @@
 
 static void __http_response_status_line_reset(struct http_response_status_line* st) {
     st->code = 0;
-    qbuf_ol_reset(&st->text);
-    qbuf_ol_reset(&st->version);
+    http_item_reset(&st->text);
+    http_item_reset(&st->version);
 }
 
 int http_response_decode_context_init(struct http_response_decode_context* ctx) {
@@ -14,7 +14,7 @@ int http_response_decode_context_init(struct http_response_decode_context* ctx) 
     ctx->base = NULL;
     ctx->offset = 0;
     __http_response_status_line_reset(&ctx->status_line);
-    http_kv_ol_list_init(&ctx->header_list);
+    http_kv_list_init(&ctx->header_list);
     ctx->content_offset = 0;
     ctx->content_length = 0;
     return 0;
@@ -25,7 +25,7 @@ void http_response_decode_context_destroy(struct http_response_decode_context* c
     ctx->base = NULL;
     ctx->offset = 0;
     __http_response_status_line_reset(&ctx->status_line);
-    http_kv_ol_list_destroy(&ctx->header_list);
+    http_kv_list_destroy(&ctx->header_list);
     ctx->content_offset = 0;
     ctx->content_length = 0;
 }
@@ -133,7 +133,7 @@ int http_response_decode(struct http_response_decode_context* ctx, const char* d
 
 void http_response_get_header(const struct http_response_decode_context* ctx, const char* key,
                               unsigned int klen, struct qbuf_ref* value) {
-    struct qbuf_ol* v = http_kv_ol_list_get(&ctx->header_list, ctx->base, key, klen);
+    struct http_item* v = http_kv_list_get(&ctx->header_list, ctx->base, key, klen);
     if (v) {
         value->base = ctx->base + v->off;
         value->size = v->len;

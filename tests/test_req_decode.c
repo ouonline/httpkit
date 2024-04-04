@@ -1,8 +1,9 @@
 #undef NDEBUG
 #include <assert.h>
 
-#include "httpkit/http_common.h"
+#include "httpkit/http_retcode.h"
 #include "httpkit/http_request_decode.h"
+#include <string.h>
 
 void test_req_decode1() {
     const char* req = "GET /about HTTP/1.1\r\nContent-Length: 8\r\n\r\nouonline";

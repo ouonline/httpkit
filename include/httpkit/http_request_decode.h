@@ -7,14 +7,14 @@ extern "C" {
 
 #include "cutils/list.h"
 #include "cutils/qbuf_ref.h"
-#include "http_kv_ol_list.h"
+#include "http_kv_list.h"
 
 struct http_request_line {
-    struct qbuf_ol method;
-    struct qbuf_ol abs_path;
-    struct qbuf_ol fragment;
-    struct qbuf_ol version;
-    struct http_kv_ol_list query_list;
+    struct http_item method;
+    struct http_item abs_path;
+    struct http_item fragment;
+    struct http_item version;
+    struct http_kv_list query_list;
 };
 
 /* values of http_request_decode_context::state */
@@ -36,7 +36,7 @@ struct http_request_decode_context {
     unsigned long offset; /* last valid pos */
 
     struct http_request_line req_line;
-    struct http_kv_ol_list header_list;
+    struct http_kv_list header_list;
 
     unsigned long content_offset;
     unsigned long content_length; /* from header `Content-Length` */
@@ -90,7 +90,7 @@ void http_request_get_query(const struct http_request_decode_context*,
 static inline int http_request_for_each_query(const struct http_request_decode_context* ctx, void* arg,
                                               int (*f)(void* arg, const char* key, unsigned int klen,
                                                        const char* value, unsigned int vlen)) {
-    return http_kv_ol_list_for_each(&ctx->req_line.query_list, ctx->base, arg, f);
+    return http_kv_list_for_each(&ctx->req_line.query_list, ctx->base, arg, f);
 }
 
 void http_request_get_header(const struct http_request_decode_context*,
@@ -99,7 +99,7 @@ void http_request_get_header(const struct http_request_decode_context*,
 static inline int http_request_for_each_header(const struct http_request_decode_context* ctx, void* arg,
                                                int (*f)(void* arg, const char* key, unsigned int klen,
                                                         const char* value, unsigned int vlen)) {
-    return http_kv_ol_list_for_each(&ctx->header_list, ctx->base, arg, f);
+    return http_kv_list_for_each(&ctx->header_list, ctx->base, arg, f);
 }
 
 static inline void http_request_get_content(const struct http_request_decode_context* ctx,

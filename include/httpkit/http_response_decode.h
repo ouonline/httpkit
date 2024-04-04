@@ -5,13 +5,13 @@
 extern "C" {
 #endif
 
-#include "http_kv_ol_list.h"
+#include "http_kv_list.h"
 #include "cutils/qbuf_ref.h"
 
 struct http_response_status_line {
     unsigned int code;
-    struct qbuf_ol text;
-    struct qbuf_ol version;
+    struct http_item text;
+    struct http_item version;
 };
 
 /* values of http_response_decode_context::state */
@@ -29,7 +29,7 @@ struct http_response_decode_context {
     unsigned long offset; /* last valid pos */
 
     struct http_response_status_line status_line;
-    struct http_kv_ol_list header_list;
+    struct http_kv_list header_list;
 
     unsigned long content_offset;
     unsigned long content_length; /* from header `Content-Length` */
@@ -75,7 +75,7 @@ void http_response_get_header(const struct http_response_decode_context*,
 static inline int http_response_for_each_header(const struct http_response_decode_context* ctx, void* arg,
                                                 int (*f)(void* arg, const char* key, unsigned int klen,
                                                          const char* value, unsigned int vlen)) {
-    return http_kv_ol_list_for_each(&ctx->header_list, ctx->base, arg, f);
+    return http_kv_list_for_each(&ctx->header_list, ctx->base, arg, f);
 }
 
 static inline void http_response_get_content(const struct http_response_decode_context* ctx,

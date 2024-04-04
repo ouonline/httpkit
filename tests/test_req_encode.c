@@ -2,6 +2,7 @@
 #include <assert.h>
 
 #include "httpkit/http_request_encode.h"
+#include <string.h>
 
 static void test_req_encode1() {
     struct qbuf res;

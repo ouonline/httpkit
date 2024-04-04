@@ -3,12 +3,12 @@
 #include <string.h>
 
 #include "../src/misc.h"
-#include "httpkit/http_common.h"
+#include "httpkit/http_retcode.h"
 #include "../src/http_header_decode.h"
 
 void test_header_decode1() {
-    struct http_kv_ol_list hdr_list;
-    http_kv_ol_list_init(&hdr_list);
+    struct http_kv_list hdr_list;
+    http_kv_list_init(&hdr_list);
 
     unsigned long offset = 0;
 
@@ -17,19 +17,19 @@ void test_header_decode1() {
     assert(rc == HRC_OK);
     assert(offset == strlen(hdr));
 
-    struct qbuf_ol* h = http_kv_ol_list_get(&hdr_list, hdr, "ou", 2);
+    struct http_item* h = http_kv_list_get(&hdr_list, hdr, "ou", 2);
     assert(h != NULL);
     const char* value = hdr + h->off;
     unsigned long vlen = h->len;
     assert(vlen == 8);
     assert(memcmp(value, "ouonline", 8) == 0);
 
-    http_kv_ol_list_destroy(&hdr_list);
+    http_kv_list_destroy(&hdr_list);
 }
 
 void test_header_decode_multi() {
-    struct http_kv_ol_list hdr_list;
-    http_kv_ol_list_init(&hdr_list);
+    struct http_kv_list hdr_list;
+    http_kv_list_init(&hdr_list);
 
     unsigned long offset = 0;
 
@@ -38,33 +38,33 @@ void test_header_decode_multi() {
     assert(rc == HRC_OK);
     assert(offset == strlen(hdr));
 
-    struct qbuf_ol* h = http_kv_ol_list_get(&hdr_list, hdr, "foo", 3);
+    struct http_item* h = http_kv_list_get(&hdr_list, hdr, "foo", 3);
     assert(h != NULL);
     const char* value = hdr + h->off;
     unsigned long vlen = h->len;
     assert(vlen == 3);
     assert(memcmp(value, "bar", 3) == 0);
 
-    h = http_kv_ol_list_get(&hdr_list, hdr, "bar", 3);
+    h = http_kv_list_get(&hdr_list, hdr, "bar", 3);
     assert(h != NULL);
     value = hdr + h->off;
     vlen = h->len;
     assert(vlen == 3);
     assert(memcmp(value, "baz", 3) == 0);
 
-    h = http_kv_ol_list_get(&hdr_list, hdr, "foobar", 6);
+    h = http_kv_list_get(&hdr_list, hdr, "foobar", 6);
     assert(h != NULL);
     value = hdr + h->off;
     vlen = h->len;
     assert(vlen == 8);
     assert(memcmp(value, "ouonline", 8) == 0);
 
-    http_kv_ol_list_destroy(&hdr_list);
+    http_kv_list_destroy(&hdr_list);
 }
 
 void test_header_decode_spaces_at_the_beginning() {
-    struct http_kv_ol_list hdr_list;
-    http_kv_ol_list_init(&hdr_list);
+    struct http_kv_list hdr_list;
+    http_kv_list_init(&hdr_list);
 
     unsigned long offset = 0;
 
@@ -73,19 +73,19 @@ void test_header_decode_spaces_at_the_beginning() {
     assert(rc == HRC_OK);
     assert(offset == strlen(hdr));
 
-    struct qbuf_ol* h = http_kv_ol_list_get(&hdr_list, hdr, "ou", 2);
+    struct http_item* h = http_kv_list_get(&hdr_list, hdr, "ou", 2);
     assert(h != NULL);
     const char* value = hdr + h->off;
     unsigned long vlen = h->len;
     assert(vlen == 8);
     assert(memcmp(value, "ouonline", 8) == 0);
 
-    http_kv_ol_list_destroy(&hdr_list);
+    http_kv_list_destroy(&hdr_list);
 }
 
 void test_header_decode_spaces_between_key_and_colon() {
-    struct http_kv_ol_list hdr_list;
-    http_kv_ol_list_init(&hdr_list);
+    struct http_kv_list hdr_list;
+    http_kv_list_init(&hdr_list);
 
     unsigned long offset = 0;
 
@@ -94,26 +94,26 @@ void test_header_decode_spaces_between_key_and_colon() {
     assert(rc == HRC_OK);
     assert(offset == strlen(hdr));
 
-    struct qbuf_ol* h = http_kv_ol_list_get(&hdr_list, hdr, "ou", 2);
+    struct http_item* h = http_kv_list_get(&hdr_list, hdr, "ou", 2);
     assert(h != NULL);
     const char* value = hdr + h->off;
     unsigned long vlen = h->len;
     assert(vlen == 8);
     assert(memcmp(value, "ouonline", 8) == 0);
 
-    h = http_kv_ol_list_get(&hdr_list, hdr, "foo", 3);
+    h = http_kv_list_get(&hdr_list, hdr, "foo", 3);
     assert(h != NULL);
     value = hdr + h->off;
     vlen = h->len;
     assert(vlen == 3);
     assert(memcmp(value, "bar", 3) == 0);
 
-    http_kv_ol_list_destroy(&hdr_list);
+    http_kv_list_destroy(&hdr_list);
 }
 
 void test_header_decode_spaces_between_colon_and_value() {
-    struct http_kv_ol_list hdr_list;
-    http_kv_ol_list_init(&hdr_list);
+    struct http_kv_list hdr_list;
+    http_kv_list_init(&hdr_list);
 
     unsigned long offset = 0;
 
@@ -122,26 +122,26 @@ void test_header_decode_spaces_between_colon_and_value() {
     assert(rc == HRC_OK);
     assert(offset == strlen(hdr));
 
-    struct qbuf_ol* h = http_kv_ol_list_get(&hdr_list, hdr, "ou", 2);
+    struct http_item* h = http_kv_list_get(&hdr_list, hdr, "ou", 2);
     assert(h != NULL);
     const char* value = hdr + h->off;
     unsigned long vlen = h->len;
     assert(vlen == 8);
     assert(memcmp(value, "ouonline", 8) == 0);
 
-    h = http_kv_ol_list_get(&hdr_list, hdr, "foo", 3);
+    h = http_kv_list_get(&hdr_list, hdr, "foo", 3);
     assert(h != NULL);
     value = hdr + h->off;
     vlen = h->len;
     assert(vlen == 3);
     assert(memcmp(value, "bar", 3) == 0);
 
-    http_kv_ol_list_destroy(&hdr_list);
+    http_kv_list_destroy(&hdr_list);
 }
 
 void test_header_decode_spaces_after_value() {
-    struct http_kv_ol_list hdr_list;
-    http_kv_ol_list_init(&hdr_list);
+    struct http_kv_list hdr_list;
+    http_kv_list_init(&hdr_list);
 
     unsigned long offset = 0;
 
@@ -150,26 +150,26 @@ void test_header_decode_spaces_after_value() {
     assert(rc == HRC_OK);
     assert(offset == strlen(hdr));
 
-    struct qbuf_ol* h = http_kv_ol_list_get(&hdr_list, hdr, "ou", 2);
+    struct http_item* h = http_kv_list_get(&hdr_list, hdr, "ou", 2);
     assert(h != NULL);
     const char* value = hdr + h->off;
     unsigned long vlen = h->len;
     assert(vlen == 8);
     assert(memcmp(value, "ouonline", vlen) == 0);
 
-    h = http_kv_ol_list_get(&hdr_list, hdr, "foo", 3);
+    h = http_kv_list_get(&hdr_list, hdr, "foo", 3);
     assert(h != NULL);
     value = hdr + h->off;
     vlen = h->len;
     assert(vlen == 3);
     assert(memcmp(value, "bar", vlen) == 0);
 
-    http_kv_ol_list_destroy(&hdr_list);
+    http_kv_list_destroy(&hdr_list);
 }
 
 void test_header_decode_content_len() {
-    struct http_kv_ol_list hdr_list;
-    http_kv_ol_list_init(&hdr_list);
+    struct http_kv_list hdr_list;
+    http_kv_list_init(&hdr_list);
 
     unsigned long content_len = 0;
     unsigned long offset = 0;
@@ -181,76 +181,76 @@ void test_header_decode_content_len() {
     set_content_len(hdr, &hdr_list, &content_len);
     assert(content_len == 8);
 
-    http_kv_ol_list_destroy(&hdr_list);
+    http_kv_list_destroy(&hdr_list);
 }
 
 void test_header_decode_spaces_in_value() {
-    struct http_kv_ol_list hdr_list;
-    http_kv_ol_list_init(&hdr_list);
+    struct http_kv_list hdr_list;
+    http_kv_list_init(&hdr_list);
 
     unsigned long offset = 0;
     const char* hdr = "Accept-Encoding: gzip, json, deflate \r\n\r\n";
     int rc = http_header_decode(hdr, strlen(hdr), hdr, &hdr_list, &offset);
     assert(rc == HRC_OK);
 
-    struct qbuf_ol* value = http_kv_ol_list_get(&hdr_list, hdr, "Accept-Encoding", 15);
+    struct http_item* value = http_kv_list_get(&hdr_list, hdr, "Accept-Encoding", 15);
     assert(value != NULL);
     assert(value->len == 19);
     assert(memcmp(hdr + value->off, "gzip, json, deflate", value->len) == 0);
 
-    http_kv_ol_list_destroy(&hdr_list);
+    http_kv_list_destroy(&hdr_list);
 }
 
 void test_header_decode_empty() {
     const char* hdr = "\r\n";
 
-    struct http_kv_ol_list hdr_list;
-    http_kv_ol_list_init(&hdr_list);
+    struct http_kv_list hdr_list;
+    http_kv_list_init(&hdr_list);
 
     unsigned long offset = 0;
     int rc = http_header_decode(hdr, strlen(hdr), hdr, &hdr_list, &offset);
     assert(rc == HRC_OK);
 
-    http_kv_ol_list_destroy(&hdr_list);
+    http_kv_list_destroy(&hdr_list);
 }
 
 void test_header_decode_empty2() {
     const char* hdr = "\r\n";
 
-    struct http_kv_ol_list hdr_list;
-    http_kv_ol_list_init(&hdr_list);
+    struct http_kv_list hdr_list;
+    http_kv_list_init(&hdr_list);
 
     unsigned long offset = 0;
     int rc = http_header_decode(hdr, strlen(hdr), hdr, &hdr_list, &offset);
     assert(rc == HRC_OK);
 
-    http_kv_ol_list_destroy(&hdr_list);
+    http_kv_list_destroy(&hdr_list);
 }
 
 void test_header_decode_more_data() {
     const char* hdr = "\r";
 
-    struct http_kv_ol_list hdr_list;
-    http_kv_ol_list_init(&hdr_list);
+    struct http_kv_list hdr_list;
+    http_kv_list_init(&hdr_list);
 
     unsigned long offset = 0;
     int rc = http_header_decode(hdr, strlen(hdr), hdr, &hdr_list, &offset);
     assert(rc == HRC_MORE_DATA);
 
-    http_kv_ol_list_destroy(&hdr_list);
+    http_kv_list_destroy(&hdr_list);
 }
 
 void test_header_decode_more_data2() {
     const char* hdr = "foo:bar\r\n";
 
-    struct http_kv_ol_list hdr_list;
-    http_kv_ol_list_init(&hdr_list);
+    struct http_kv_list hdr_list;
+    http_kv_list_init(&hdr_list);
 
     unsigned long offset = 0;
     int rc = http_header_decode(hdr, strlen(hdr), hdr, &hdr_list, &offset);
     assert(rc == HRC_MORE_DATA);
 
-    http_kv_ol_list_destroy(&hdr_list);
+    http_kv_list_destroy(&hdr_list);
 }
 
 void test_header_decode() {

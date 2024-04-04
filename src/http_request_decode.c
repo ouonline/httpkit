@@ -12,23 +12,23 @@
 /* ------------------------------------------------------------------------- */
 
 static void __request_line_init(struct http_request_line* line) {
-    qbuf_ol_reset(&line->method);
-    qbuf_ol_reset(&line->abs_path);
-    qbuf_ol_reset(&line->fragment);
-    qbuf_ol_reset(&line->version);
-    http_kv_ol_list_init(&line->query_list);
+    http_item_reset(&line->method);
+    http_item_reset(&line->abs_path);
+    http_item_reset(&line->fragment);
+    http_item_reset(&line->version);
+    http_kv_list_init(&line->query_list);
 }
 
 static void __reqeust_line_destroy(struct http_request_line* line) {
-    qbuf_ol_reset(&line->method);
-    qbuf_ol_reset(&line->abs_path);
-    qbuf_ol_reset(&line->fragment);
-    qbuf_ol_reset(&line->version);
-    http_kv_ol_list_destroy(&line->query_list);
+    http_item_reset(&line->method);
+    http_item_reset(&line->abs_path);
+    http_item_reset(&line->fragment);
+    http_item_reset(&line->version);
+    http_kv_list_destroy(&line->query_list);
 }
 
 static int __request_line_decode_method(const char* base, unsigned long len,
-                                        struct qbuf_ol* method, unsigned long* offset) {
+                                        struct http_item* method, unsigned long* offset) {
     const char* cursor = base;
     const char* end = base + len;
 
@@ -100,7 +100,7 @@ static int __request_line_decode_others(const char* base, const char* cursor, un
         case HTTP_REQ_EXPECT_QUERY: {
             int rc;
             const char* last_pos = cursor;
-            struct qbuf_ol key, value;
+            struct http_item key, value;
 
             if (*cursor == ' ') {
                 ++cursor; /* skips ' ' */
@@ -146,8 +146,8 @@ static int __request_line_decode_others(const char* base, const char* cursor, un
                 }
                 if (*cursor == ' ') {
                     value.len = cursor - base - value.off;
-                    rc = http_kv_ol_list_update(&l->query_list, base, key.off, key.len,
-                                                value.off, value.len);
+                    rc = http_kv_list_update(&l->query_list, base, key.off, key.len,
+                                             value.off, value.len);
                     if (rc != HRC_OK) {
                         return rc;
                     }
@@ -161,8 +161,8 @@ static int __request_line_decode_others(const char* base, const char* cursor, un
                 }
                 if (*cursor == '&') {
                     value.len = cursor - base - value.off;
-                    rc = http_kv_ol_list_update(&l->query_list, base, key.off, key.len,
-                                                value.off, value.len);
+                    rc = http_kv_list_update(&l->query_list, base, key.off, key.len,
+                                             value.off, value.len);
                     if (rc != HRC_OK) {
                         return rc;
                     }
@@ -175,8 +175,8 @@ static int __request_line_decode_others(const char* base, const char* cursor, un
                 }
                 if (*cursor == '#') {
                     value.len = cursor - base - value.off;
-                    rc = http_kv_ol_list_update(&l->query_list, base, key.off, key.len,
-                                                value.off, value.len);
+                    rc = http_kv_list_update(&l->query_list, base, key.off, key.len,
+                                             value.off, value.len);
                     if (rc != HRC_OK) {
                         return rc;
                     }
@@ -249,7 +249,7 @@ void http_request_decode_context_init(struct http_request_decode_context* ctx) {
     ctx->base = NULL;
     ctx->offset = 0;
     __request_line_init(&ctx->req_line);
-    http_kv_ol_list_init(&ctx->header_list);
+    http_kv_list_init(&ctx->header_list);
     ctx->content_offset = 0;
     ctx->content_length = 0;
 }
@@ -259,7 +259,7 @@ void http_request_decode_context_destroy(struct http_request_decode_context* ctx
     ctx->base = NULL;
     ctx->offset = 0;
     __reqeust_line_destroy(&ctx->req_line);
-    http_kv_ol_list_destroy(&ctx->header_list);
+    http_kv_list_destroy(&ctx->header_list);
     ctx->content_offset = 0;
     ctx->content_length = 0;
 }
@@ -328,7 +328,7 @@ int http_request_decode(struct http_request_decode_context* ctx, const char* dat
 
 void http_request_get_query(const struct http_request_decode_context* ctx, const char* key,
                             unsigned int klen, struct qbuf_ref* value) {
-    struct qbuf_ol* v = http_kv_ol_list_get(&ctx->req_line.query_list, ctx->base, key, klen);
+    struct http_item* v = http_kv_list_get(&ctx->req_line.query_list, ctx->base, key, klen);
     if (v) {
         value->base = ctx->base + v->off;
         value->size = v->len;
@@ -340,7 +340,7 @@ void http_request_get_query(const struct http_request_decode_context* ctx, const
 
 void http_request_get_header(const struct http_request_decode_context* ctx, const char* key,
                              unsigned int klen, struct qbuf_ref* value) {
-    struct qbuf_ol* v = http_kv_ol_list_get(&ctx->header_list, ctx->base, key, klen);
+    struct http_item* v = http_kv_list_get(&ctx->header_list, ctx->base, key, klen);
     if (v) {
         value->base = ctx->base + v->off;
         value->size = v->len;

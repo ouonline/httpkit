@@ -1,8 +1,9 @@
 #undef NDEBUG
 #include <assert.h>
 
-#include "httpkit/http_common.h"
+#include "httpkit/http_retcode.h"
 #include "httpkit/http_utils.h"
+#include <string.h>
 
 void test_url_decode() {
     const char* str = "%23from+ou%25%21online";
