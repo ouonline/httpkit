@@ -16,27 +16,27 @@ void test_req_decode1() {
 
     struct qbuf_ref ref;
     qbuf_ref_reset(&ref);
-    http_request_get_method(&ctx, &ref);
+    http_request_get_method(&ctx, req, &ref);
     assert(ref.size == 3);
     assert(memcmp(ref.base, "GET", 3) == 0);
 
     qbuf_ref_reset(&ref);
-    http_request_get_abs_path(&ctx, &ref);
+    http_request_get_abs_path(&ctx, req, &ref);
     assert(ref.size == 6);
     assert(memcmp(ref.base, "/about", 6) == 0);
 
     qbuf_ref_reset(&ref);
-    http_request_get_header(&ctx, "Content-Length", 14, &ref);
+    http_request_get_header(&ctx, req, "Content-Length", 14, &ref);
     assert(ref.size == 1);
     assert(memcmp(ref.base, "8", 1) == 0);
 
     qbuf_ref_reset(&ref);
-    http_request_get_content(&ctx, &ref);
+    http_request_get_content(&ctx, req, &ref);
     assert(ref.size == 8);
     assert(memcmp(ref.base, "ouonline", 8) == 0);
 
     qbuf_ref_reset(&ref);
-    http_request_get_version(&ctx, &ref);
+    http_request_get_version(&ctx, req, &ref);
     assert(ref.size == 8);
     assert(memcmp(ref.base, "HTTP/1.1", 8) == 0);
 
@@ -56,17 +56,17 @@ void test_req_decode_query() {
 
     struct qbuf_ref ref;
     qbuf_ref_reset(&ref);
-    http_request_get_query(&ctx, "foo", 3, &ref);
+    http_request_get_query(&ctx, req, "foo", 3, &ref);
     assert(ref.size == 3);
     assert(memcmp(ref.base, "bar", 3) == 0);
 
     qbuf_ref_reset(&ref);
-    http_request_get_query(&ctx, "bar", 3, &ref);
+    http_request_get_query(&ctx, req, "bar", 3, &ref);
     assert(ref.size == 3);
     assert(memcmp(ref.base, "baz", 3) == 0);
 
     qbuf_ref_reset(&ref);
-    http_request_get_query(&ctx, "unknown", 7, &ref);
+    http_request_get_query(&ctx, req, "unknown", 7, &ref);
     assert(ref.base == NULL);
     assert(ref.size == 0);
 
@@ -86,12 +86,12 @@ void test_req_decode_header() {
 
     struct qbuf_ref ref;
     qbuf_ref_reset(&ref);
-    http_request_get_header(&ctx, "abc", 3, &ref);
+    http_request_get_header(&ctx, req, "abc", 3, &ref);
     assert(ref.size == 4);
     assert(memcmp(ref.base, "defg", 4) == 0);
 
     qbuf_ref_reset(&ref);
-    http_request_get_header(&ctx, "foo", 3, &ref);
+    http_request_get_header(&ctx, req, "foo", 3, &ref);
     assert(ref.size == 3);
     assert(memcmp(ref.base, "bar", 3) == 0);
 
@@ -123,27 +123,27 @@ void test_req_decode_more_data() {
 
     struct qbuf_ref ref;
     qbuf_ref_reset(&ref);
-    http_request_get_header(&ctx, "abc", 3, &ref);
+    http_request_get_header(&ctx, req, "abc", 3, &ref);
     assert(ref.size == 4);
     assert(memcmp(ref.base, "defg", 4) == 0);
 
     qbuf_ref_reset(&ref);
-    http_request_get_header(&ctx, "foo", 3, &ref);
+    http_request_get_header(&ctx, req, "foo", 3, &ref);
     assert(ref.size == 3);
     assert(memcmp(ref.base, "bar", 3) == 0);
 
     qbuf_ref_reset(&ref);
-    http_request_get_query(&ctx, "foo", 3, &ref);
+    http_request_get_query(&ctx, req, "foo", 3, &ref);
     assert(ref.size == 3);
     assert(memcmp(ref.base, "bar", 3) == 0);
 
     qbuf_ref_reset(&ref);
-    http_request_get_query(&ctx, "bar", 3, &ref);
+    http_request_get_query(&ctx, req, "bar", 3, &ref);
     assert(ref.size == 3);
     assert(memcmp(ref.base, "baz", 3) == 0);
 
     qbuf_ref_reset(&ref);
-    http_request_get_content(&ctx, &ref);
+    http_request_get_content(&ctx, req, &ref);
     assert(ref.size == 5);
     assert(memcmp(ref.base, "hello", 5) == 0);
 
@@ -189,12 +189,12 @@ void test_req_decode_fragment() {
 
     struct qbuf_ref ref;
     qbuf_ref_reset(&ref);
-    http_request_get_query(&ctx, "foo", 3, &ref);
+    http_request_get_query(&ctx, req, "foo", 3, &ref);
     assert(ref.size == 3);
     assert(memcmp(ref.base, "bar", 3) == 0);
 
     qbuf_ref_reset(&ref);
-    http_request_get_fragment(&ctx, &ref);
+    http_request_get_fragment(&ctx, req, &ref);
     assert(ref.size == 6);
     assert(memcmp(ref.base, "anchor", 6) == 0);
 
@@ -212,17 +212,17 @@ void test_req_decode_fragment2() {
 
     struct qbuf_ref ref;
     qbuf_ref_reset(&ref);
-    http_request_get_abs_path(&ctx, &ref);
+    http_request_get_abs_path(&ctx, req, &ref);
     assert(ref.size == 6);
     assert(memcmp(ref.base, "/about", 6) == 0);
 
     qbuf_ref_reset(&ref);
-    http_request_get_header(&ctx, "abc", 3, &ref);
+    http_request_get_header(&ctx, req, "abc", 3, &ref);
     assert(ref.size == 4);
     assert(memcmp(ref.base, "defg", 4) == 0);
 
     qbuf_ref_reset(&ref);
-    http_request_get_fragment(&ctx, &ref);
+    http_request_get_fragment(&ctx, req, &ref);
     assert(ref.size == 6);
     assert(memcmp(ref.base, "anchor", 6) == 0);
 
@@ -240,17 +240,17 @@ void test_req_decode_empty_fragment() {
 
     struct qbuf_ref ref;
     qbuf_ref_reset(&ref);
-    http_request_get_abs_path(&ctx, &ref);
+    http_request_get_abs_path(&ctx, req, &ref);
     assert(ref.size == 6);
     assert(memcmp(ref.base, "/about", 6) == 0);
 
     qbuf_ref_reset(&ref);
-    http_request_get_header(&ctx, "abc", 3, &ref);
+    http_request_get_header(&ctx, req, "abc", 3, &ref);
     assert(ref.size == 4);
     assert(memcmp(ref.base, "defg", 4) == 0);
 
     qbuf_ref_reset(&ref);
-    http_request_get_fragment(&ctx, &ref);
+    http_request_get_fragment(&ctx, req, &ref);
     assert(ref.size == 0);
 
     http_request_decode_context_destroy(&ctx);
@@ -267,17 +267,17 @@ void test_req_decode_empty_query() {
 
     struct qbuf_ref ref;
     qbuf_ref_reset(&ref);
-    http_request_get_abs_path(&ctx, &ref);
+    http_request_get_abs_path(&ctx, req, &ref);
     assert(ref.size == 6);
     assert(memcmp(ref.base, "/about", 6) == 0);
 
     qbuf_ref_reset(&ref);
-    http_request_get_header(&ctx, "abc", 3, &ref);
+    http_request_get_header(&ctx, req, "abc", 3, &ref);
     assert(ref.size == 4);
     assert(memcmp(ref.base, "defg", 4) == 0);
 
     qbuf_ref_reset(&ref);
-    http_request_get_fragment(&ctx, &ref);
+    http_request_get_fragment(&ctx, req, &ref);
     assert(ref.size == 0);
 
     http_request_decode_context_destroy(&ctx);
@@ -294,17 +294,17 @@ void test_req_decode_empty_query_and_fragment() {
 
     struct qbuf_ref ref;
     qbuf_ref_reset(&ref);
-    http_request_get_abs_path(&ctx, &ref);
+    http_request_get_abs_path(&ctx, req, &ref);
     assert(ref.size == 6);
     assert(memcmp(ref.base, "/about", 6) == 0);
 
     qbuf_ref_reset(&ref);
-    http_request_get_header(&ctx, "abc", 3, &ref);
+    http_request_get_header(&ctx, req, "abc", 3, &ref);
     assert(ref.size == 4);
     assert(memcmp(ref.base, "defg", 4) == 0);
 
     qbuf_ref_reset(&ref);
-    http_request_get_fragment(&ctx, &ref);
+    http_request_get_fragment(&ctx, req, &ref);
     assert(ref.size == 0);
 
     http_request_decode_context_destroy(&ctx);

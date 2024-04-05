@@ -19,7 +19,6 @@ static void __http_response_status_line_reset(struct http_response_status_line* 
 
 int http_response_decode_context_init(struct http_response_decode_context* ctx) {
     ctx->state = HTTP_RES_EXPECT_STATUS_LINE;
-    ctx->base = NULL;
     ctx->offset = 0;
     __http_response_status_line_reset(&ctx->status_line);
     http_kv_list_init(&ctx->header_list);
@@ -30,7 +29,6 @@ int http_response_decode_context_init(struct http_response_decode_context* ctx) 
 
 void http_response_decode_context_destroy(struct http_response_decode_context* ctx) {
     ctx->state = HTTP_RES_EXPECT_STATUS_LINE;
-    ctx->base = NULL;
     ctx->offset = 0;
     __http_response_status_line_reset(&ctx->status_line);
     http_kv_list_destroy(&ctx->header_list);
@@ -92,9 +90,10 @@ static int __status_line_decode(const char* base, unsigned long len,
     return HRC_RES_LINE; /* unreachable */
 }
 
-int http_response_decode(struct http_response_decode_context* ctx, const char* data,
+int http_response_decode(struct http_response_decode_context* ctx, const void* base,
                          unsigned long len) {
-    ctx->base = data;
+    const char* data = (const char*)base;
+
     if (ctx->state == HTTP_RES_EXPECT_END) {
         return HRC_OK;
     }
@@ -116,14 +115,14 @@ int http_response_decode(struct http_response_decode_context* ctx, const char* d
         }
         case HTTP_RES_EXPECT_HEADER: {
             unsigned long parsed_len = 0;
-            int rc = http_header_decode(data, len, ctx->base, &ctx->header_list, &parsed_len);
+            int rc = http_header_decode(data, len, base, &ctx->header_list, &parsed_len);
             len -= parsed_len;
             ctx->offset += parsed_len;
             if (rc != HRC_OK) {
                 return rc;
             }
 
-            set_content_len(ctx->base, &ctx->header_list, &ctx->content_length);
+            set_content_len(base, &ctx->header_list, &ctx->content_length);
             ctx->state = HTTP_RES_EXPECT_CONTENT;
         }
         case HTTP_RES_EXPECT_CONTENT: {
@@ -139,11 +138,11 @@ int http_response_decode(struct http_response_decode_context* ctx, const char* d
     return HRC_OK;
 }
 
-void http_response_get_header(const struct http_response_decode_context* ctx, const char* key,
-                              unsigned int klen, struct qbuf_ref* value) {
-    struct http_item* v = http_kv_list_get(&ctx->header_list, ctx->base, key, klen);
+void http_response_get_header(const struct http_response_decode_context* ctx, const void* base,
+                              const char* key, unsigned int klen, struct qbuf_ref* value) {
+    struct http_item* v = http_kv_list_get(&ctx->header_list, base, key, klen);
     if (v) {
-        value->base = ctx->base + v->off;
+        value->base = (const char*)base + v->off;
         value->size = v->len;
     } else {
         value->base = NULL;

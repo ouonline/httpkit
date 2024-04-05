@@ -16,13 +16,13 @@ void http_kv_list_destroy(struct http_kv_list* l) {
     }
 }
 
-static struct http_kv_node* __get(const struct http_kv_list* l, const char* base,
+static struct http_kv_node* __get(const struct http_kv_list* l, const void* base,
                                   const char* key, unsigned int klen) {
     struct list_node* cur;
     list_for_each(cur, &l->head) {
         struct http_kv_node* node = list_entry(cur, struct http_kv_node, node);
         if (klen == node->key.len) {
-            const char* kstr = base + node->key.off;
+            const char* kstr = (const char*)base + node->key.off;
             if (memcmp(kstr, key, klen) == 0) {
                 return node;
             }
@@ -31,7 +31,7 @@ static struct http_kv_node* __get(const struct http_kv_list* l, const char* base
     return NULL;
 }
 
-struct http_item* http_kv_list_get(const struct http_kv_list* l, const char* base,
+struct http_item* http_kv_list_get(const struct http_kv_list* l, const void* base,
                                    const char* key, unsigned int klen) {
     struct http_kv_node* node = __get(l, base, key, klen);
     if (node) {
@@ -40,10 +40,10 @@ struct http_item* http_kv_list_get(const struct http_kv_list* l, const char* bas
     return NULL;
 }
 
-int http_kv_list_update(struct http_kv_list* l, const char* base,
+int http_kv_list_update(struct http_kv_list* l, const void* base,
                         unsigned int koff, unsigned int klen,
                         unsigned int voff, unsigned int vlen) {
-    const char* key = base + koff;
+    const char* key = (const char*)base + koff;
     struct http_kv_node* node = __get(l, base, key, klen);
     if (node) {
         node->key.off = koff; /* update to the latest offset */
@@ -66,15 +66,15 @@ int http_kv_list_update(struct http_kv_list* l, const char* base,
     return HRC_OK;
 }
 
-int http_kv_list_for_each(const struct http_kv_list* l, const char* base, void* arg,
+int http_kv_list_for_each(const struct http_kv_list* l, const void* base, void* arg,
                           int (*f)(void* arg,
                                    const char* k, unsigned int klen,
                                    const char* v, unsigned int vlen)) {
     struct list_node* cur;
     list_for_each(cur, &l->head) {
         struct http_kv_node* node = list_entry(cur, struct http_kv_node, node);
-        int rc = f(arg, base + node->key.off, node->key.len,
-                   base + node->value.off, node->value.len);
+        int rc = f(arg, (const char*)base + node->key.off, node->key.len,
+                   (const char*)base + node->value.off, node->value.len);
         if (rc != HRC_OK) {
             return rc;
         }
