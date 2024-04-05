@@ -20,12 +20,12 @@ struct http_kv_list {
 
 void http_kv_list_init(struct http_kv_list*);
 void http_kv_list_destroy(struct http_kv_list*);
-int http_kv_list_update(struct http_kv_list*, const char* base,
+int http_kv_list_update(struct http_kv_list*, const void* base,
                         unsigned int koff, unsigned int klen,
                         unsigned int voff, unsigned int vlen);
-struct http_item* http_kv_list_get(const struct http_kv_list*, const char* base,
+struct http_item* http_kv_list_get(const struct http_kv_list*, const void* base,
                                    const char* key, unsigned int klen);
-int http_kv_list_for_each(const struct http_kv_list*, const char* base, void* arg,
+int http_kv_list_for_each(const struct http_kv_list*, const void* base, void* arg,
                           int (*f)(void* arg,
                                    const char* k, unsigned int klen,
                                    const char* v, unsigned int vlen));

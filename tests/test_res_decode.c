@@ -19,12 +19,12 @@ void test_res_decode1() {
 
     struct qbuf_ref ref;
     qbuf_ref_reset(&ref);
-    http_response_get_status_text(&ctx, &ref);
+    http_response_get_status_text(&ctx, res, &ref);
     assert(ref.size == 9);
     assert(memcmp(ref.base, "Not Found", 9) == 0);
 
     qbuf_ref_reset(&ref);
-    http_response_get_version(&ctx, &ref);
+    http_response_get_version(&ctx, res, &ref);
     assert(ref.size == 8);
     assert(memcmp(ref.base, "HTTP/1.1", 8) == 0);
 
@@ -47,12 +47,12 @@ void test_res_decode_header() {
 
     struct qbuf_ref ref;
     qbuf_ref_reset(&ref);
-    http_response_get_status_text(&ctx, &ref);
+    http_response_get_status_text(&ctx, res, &ref);
     assert(ref.size == 2);
     assert(memcmp(ref.base, "OK", 2) == 0);
 
     qbuf_ref_reset(&ref);
-    http_response_get_header(&ctx, "foo", 3, &ref);
+    http_response_get_header(&ctx, res, "foo", 3, &ref);
     assert(ref.size == 3);
     assert(memcmp(ref.base, "bar", 3) == 0);
 
@@ -87,12 +87,12 @@ void test_res_decode_more_data() {
 
     struct qbuf_ref ref;
     qbuf_ref_reset(&ref);
-    http_response_get_status_text(&ctx, &ref);
+    http_response_get_status_text(&ctx, res, &ref);
     assert(ref.size == 2);
     assert(memcmp(ref.base, "OK", 2) == 0);
 
     qbuf_ref_reset(&ref);
-    http_response_get_header(&ctx, "foo", 3, &ref);
+    http_response_get_header(&ctx, res, "foo", 3, &ref);
     assert(ref.size == 3);
     assert(memcmp(ref.base, "bar", 3) == 0);
 
@@ -115,17 +115,17 @@ void test_res_decode_content() {
 
     struct qbuf_ref ref;
     qbuf_ref_reset(&ref);
-    http_response_get_status_text(&ctx, &ref);
+    http_response_get_status_text(&ctx, res, &ref);
     assert(ref.size == 2);
     assert(memcmp(ref.base, "OK", 2) == 0);
 
     qbuf_ref_reset(&ref);
-    http_response_get_header(&ctx, "foo", 3, &ref);
+    http_response_get_header(&ctx, res, "foo", 3, &ref);
     assert(ref.size == 3);
     assert(memcmp(ref.base, "bar", 3) == 0);
 
     qbuf_ref_reset(&ref);
-    http_response_get_content(&ctx, &ref);
+    http_response_get_content(&ctx, res, &ref);
     assert(ref.size == 8);
     assert(memcmp(ref.base, "ouonline", 8) == 0);
 

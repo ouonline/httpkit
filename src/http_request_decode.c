@@ -258,7 +258,6 @@ static int __request_line_decode_others(const char* base, const char* cursor, un
 
 void http_request_decode_context_init(struct http_request_decode_context* ctx) {
     ctx->state = HTTP_REQ_EXPECT_METHOD;
-    ctx->base = NULL;
     ctx->offset = 0;
     __request_line_init(&ctx->req_line);
     http_kv_list_init(&ctx->header_list);
@@ -268,7 +267,6 @@ void http_request_decode_context_init(struct http_request_decode_context* ctx) {
 
 void http_request_decode_context_destroy(struct http_request_decode_context* ctx) {
     ctx->state = HTTP_REQ_EXPECT_METHOD;
-    ctx->base = NULL;
     ctx->offset = 0;
     __reqeust_line_destroy(&ctx->req_line);
     http_kv_list_destroy(&ctx->header_list);
@@ -276,9 +274,10 @@ void http_request_decode_context_destroy(struct http_request_decode_context* ctx
     ctx->content_length = 0;
 }
 
-int http_request_decode(struct http_request_decode_context* ctx, const char* data,
+int http_request_decode(struct http_request_decode_context* ctx, const void* base,
                         unsigned long len) {
-    ctx->base = data; /* updates base addr */
+    const char* data = (const char*)base;
+
     if (ctx->state == HTTP_REQ_EXPECT_END) {
         return HRC_OK;
     }
@@ -303,7 +302,7 @@ int http_request_decode(struct http_request_decode_context* ctx, const char* dat
         case HTTP_REQ_EXPECT_FRAGMENT:
         case HTTP_REQ_EXPECT_VERSION: {
             unsigned long parsed_len = 0;
-            int rc = __request_line_decode_others(ctx->base, data, len, &ctx->req_line,
+            int rc = __request_line_decode_others(base, data, len, &ctx->req_line,
                                                   &ctx->state, &parsed_len);
             len -= parsed_len;
             data += parsed_len;
@@ -315,14 +314,14 @@ int http_request_decode(struct http_request_decode_context* ctx, const char* dat
         }
         case HTTP_REQ_EXPECT_HEADER: {
             unsigned long parsed_len = 0;
-            int rc = http_header_decode(data, len, ctx->base, &ctx->header_list, &parsed_len);
+            int rc = http_header_decode(data, len, base, &ctx->header_list, &parsed_len);
             len -= parsed_len;
             ctx->offset += parsed_len;
             if (rc != HRC_OK) {
                 return rc;
             }
 
-            set_content_len(ctx->base, &ctx->header_list, &ctx->content_length);
+            set_content_len(base, &ctx->header_list, &ctx->content_length);
             ctx->state = HTTP_REQ_EXPECT_CONTENT;
         }
         case HTTP_REQ_EXPECT_CONTENT: {
@@ -338,11 +337,11 @@ int http_request_decode(struct http_request_decode_context* ctx, const char* dat
     return HRC_OK;
 }
 
-void http_request_get_query(const struct http_request_decode_context* ctx, const char* key,
-                            unsigned int klen, struct qbuf_ref* value) {
-    struct http_item* v = http_kv_list_get(&ctx->req_line.query_list, ctx->base, key, klen);
+void http_request_get_query(const struct http_request_decode_context* ctx, const void* base,
+                            const char* key, unsigned int klen, struct qbuf_ref* value) {
+    struct http_item* v = http_kv_list_get(&ctx->req_line.query_list, base, key, klen);
     if (v) {
-        value->base = ctx->base + v->off;
+        value->base = (const char*)base + v->off;
         value->size = v->len;
     } else {
         value->base = NULL;
@@ -350,11 +349,11 @@ void http_request_get_query(const struct http_request_decode_context* ctx, const
     }
 }
 
-void http_request_get_header(const struct http_request_decode_context* ctx, const char* key,
-                             unsigned int klen, struct qbuf_ref* value) {
-    struct http_item* v = http_kv_list_get(&ctx->header_list, ctx->base, key, klen);
+void http_request_get_header(const struct http_request_decode_context* ctx, const void* base,
+                             const char* key, unsigned int klen, struct qbuf_ref* value) {
+    struct http_item* v = http_kv_list_get(&ctx->header_list, base, key, klen);
     if (v) {
-        value->base = ctx->base + v->off;
+        value->base = (const char*)base + v->off;
         value->size = v->len;
     } else {
         value->base = NULL;
