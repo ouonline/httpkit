@@ -21,7 +21,7 @@ int http_response_decode_context_init(struct http_response_decode_context* ctx) 
     ctx->state = HTTP_RES_EXPECT_STATUS_LINE;
     ctx->offset = 0;
     __http_response_status_line_reset(&ctx->status_line);
-    http_kv_list_init(&ctx->header_list);
+    cvector_init(&ctx->header_list, sizeof(struct kvpair));
     ctx->content_offset = 0;
     ctx->content_length = 0;
     return 0;
@@ -31,7 +31,7 @@ void http_response_decode_context_destroy(struct http_response_decode_context* c
     ctx->state = HTTP_RES_EXPECT_STATUS_LINE;
     ctx->offset = 0;
     __http_response_status_line_reset(&ctx->status_line);
-    http_kv_list_destroy(&ctx->header_list);
+    cvector_destroy(&ctx->header_list);
     ctx->content_offset = 0;
     ctx->content_length = 0;
 }
@@ -138,14 +138,20 @@ int http_response_decode(struct http_response_decode_context* ctx, const void* b
     return HRC_OK;
 }
 
-void http_response_get_header(const struct http_response_decode_context* ctx, const void* base,
+void http_response_get_header(struct http_response_decode_context* ctx, const void* base,
                               const char* key, unsigned int klen, struct qbuf_ref* value) {
-    struct http_item* v = http_kv_list_get(&ctx->header_list, base, key, klen);
-    if (v) {
-        value->base = (const char*)base + v->off;
-        value->size = v->len;
+    struct kvpair* item = kvpair_vector_lookup(&ctx->header_list, base, key, klen);
+    if (item) {
+        value->base = (const char*)base + item->value.off;
+        value->size = item->value.len;
     } else {
         value->base = NULL;
         value->size = 0;
     }
+}
+
+int http_response_for_each_header(struct http_response_decode_context* ctx, const void* base,
+                                  void* arg, int (*f)(void* arg, const char* key, unsigned int klen,
+                                                      const char* value, unsigned int vlen)) {
+    return kvpair_vector_foreach(&ctx->header_list, base, arg, f);
 }
