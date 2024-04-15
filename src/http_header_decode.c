@@ -1,8 +1,9 @@
 #include "httpkit/http_retcode.h"
+#include "kvpair.h"
 #include "http_header_decode.h"
 
 int http_header_decode(const char* data, unsigned long len, const char* base,
-                       struct http_kv_list* l, unsigned long* offset) {
+                       struct cvector* kvpair_list, unsigned long* offset) {
     int rc;
     const char* cursor = data;
     const char* end = data + len;
@@ -112,8 +113,8 @@ HEADER_ITEM_VALUE:
     }
 
     /* HEADER_ITEM_END */
-    rc = http_kv_list_update(l, base, key_off, key_len,
-                             value_off, value_len);
+    rc = kvpair_vector_update(kvpair_list, (void*)base, key_off, key_len,
+                              value_off, value_len);
     if (rc != HRC_OK) {
         return rc;
     }

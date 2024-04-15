@@ -28,7 +28,7 @@ static void __request_line_init(struct http_request_line* line) {
     http_item_reset(&line->abs_path);
     http_item_reset(&line->fragment);
     http_item_reset(&line->version);
-    http_kv_list_init(&line->query_list);
+    cvector_init(&line->query_list, sizeof(struct kvpair));
 }
 
 static void __reqeust_line_destroy(struct http_request_line* line) {
@@ -36,7 +36,7 @@ static void __reqeust_line_destroy(struct http_request_line* line) {
     http_item_reset(&line->abs_path);
     http_item_reset(&line->fragment);
     http_item_reset(&line->version);
-    http_kv_list_destroy(&line->query_list);
+    cvector_destroy(&line->query_list);
 }
 
 static int __request_line_decode_method(const char* base, unsigned long len,
@@ -158,8 +158,8 @@ static int __request_line_decode_others(const char* base, const char* cursor, un
                 }
                 if (*cursor == ' ') {
                     value.len = cursor - base - value.off;
-                    rc = http_kv_list_update(&l->query_list, base, key.off, key.len,
-                                             value.off, value.len);
+                    rc = kvpair_vector_update(&l->query_list, base, key.off, key.len,
+                                              value.off, value.len);
                     if (rc != HRC_OK) {
                         return rc;
                     }
@@ -173,8 +173,8 @@ static int __request_line_decode_others(const char* base, const char* cursor, un
                 }
                 if (*cursor == '&') {
                     value.len = cursor - base - value.off;
-                    rc = http_kv_list_update(&l->query_list, base, key.off, key.len,
-                                             value.off, value.len);
+                    rc = kvpair_vector_update(&l->query_list, base, key.off, key.len,
+                                              value.off, value.len);
                     if (rc != HRC_OK) {
                         return rc;
                     }
@@ -187,8 +187,8 @@ static int __request_line_decode_others(const char* base, const char* cursor, un
                 }
                 if (*cursor == '#') {
                     value.len = cursor - base - value.off;
-                    rc = http_kv_list_update(&l->query_list, base, key.off, key.len,
-                                             value.off, value.len);
+                    rc = kvpair_vector_update(&l->query_list, base, key.off, key.len,
+                                              value.off, value.len);
                     if (rc != HRC_OK) {
                         return rc;
                     }
@@ -260,7 +260,7 @@ void http_request_decode_context_init(struct http_request_decode_context* ctx) {
     ctx->state = HTTP_REQ_EXPECT_METHOD;
     ctx->offset = 0;
     __request_line_init(&ctx->req_line);
-    http_kv_list_init(&ctx->header_list);
+    cvector_init(&ctx->header_list, sizeof(struct kvpair));
     ctx->content_offset = 0;
     ctx->content_length = 0;
 }
@@ -269,7 +269,7 @@ void http_request_decode_context_destroy(struct http_request_decode_context* ctx
     ctx->state = HTTP_REQ_EXPECT_METHOD;
     ctx->offset = 0;
     __reqeust_line_destroy(&ctx->req_line);
-    http_kv_list_destroy(&ctx->header_list);
+    cvector_destroy(&ctx->header_list);
     ctx->content_offset = 0;
     ctx->content_length = 0;
 }
@@ -337,26 +337,38 @@ int http_request_decode(struct http_request_decode_context* ctx, const void* bas
     return HRC_OK;
 }
 
-void http_request_get_query(const struct http_request_decode_context* ctx, const void* base,
+void http_request_get_query(struct http_request_decode_context* ctx, const void* base,
                             const char* key, unsigned int klen, struct qbuf_ref* value) {
-    struct http_item* v = http_kv_list_get(&ctx->req_line.query_list, base, key, klen);
-    if (v) {
-        value->base = (const char*)base + v->off;
-        value->size = v->len;
+    struct kvpair* item = kvpair_vector_lookup(&ctx->req_line.query_list, base, key, klen);
+    if (item) {
+        value->base = (const char*)base + item->value.off;
+        value->size = item->value.len;
     } else {
         value->base = NULL;
         value->size = 0;
     }
 }
 
-void http_request_get_header(const struct http_request_decode_context* ctx, const void* base,
+int http_request_for_each_query(struct http_request_decode_context* ctx, const void* base,
+                                void* arg, int (*f)(void* arg, const char* key, unsigned int klen,
+                                                    const char* value, unsigned int vlen)) {
+    return kvpair_vector_foreach(&ctx->req_line.query_list, base, arg, f);
+}
+
+void http_request_get_header(struct http_request_decode_context* ctx, const void* base,
                              const char* key, unsigned int klen, struct qbuf_ref* value) {
-    struct http_item* v = http_kv_list_get(&ctx->header_list, base, key, klen);
-    if (v) {
-        value->base = (const char*)base + v->off;
-        value->size = v->len;
+    struct kvpair* item = kvpair_vector_lookup(&ctx->header_list, base, key, klen);
+    if (item) {
+        value->base = (const char*)base + item->value.off;
+        value->size = item->value.len;
     } else {
         value->base = NULL;
         value->size = 0;
     }
+}
+
+int http_request_for_each_header(struct http_request_decode_context* ctx, const void* base,
+                                 void* arg, int (*f)(void* arg, const char* key, unsigned int klen,
+                                                     const char* value, unsigned int vlen)) {
+    return kvpair_vector_foreach(&ctx->header_list, base, arg, f);
 }
