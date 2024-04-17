@@ -54,12 +54,15 @@ static inline void http_response_get_version(struct http_response_decode_context
     res->size = ctx->status_line.version.len;
 }
 
-void http_response_get_header(struct http_response_decode_context*, const void* base,
-                              const char* key, unsigned int klen, struct qbuf_ref* value);
+static inline unsigned int http_response_get_header_count(struct http_response_decode_context* ctx) {
+    return cvector_size(&ctx->header_list);
+}
 
-int http_response_for_each_header(struct http_response_decode_context* ctx, const void* base,
-                                  void* arg, int (*f)(void* arg, const char* key, unsigned int klen,
-                                                      const char* value, unsigned int vlen));
+void http_response_get_header(struct http_response_decode_context*, const void* base, unsigned int idx,
+                              struct qbuf_ref* key /* can be NULL */,
+                              struct qbuf_ref* value /* can be NULL */);
+void http_response_find_header(struct http_response_decode_context*, const void* base,
+                               const char* key, unsigned int klen, struct qbuf_ref* value);
 
 static inline void http_response_get_content(struct http_response_decode_context* ctx,
                                              const void* base, struct qbuf_ref* res) {

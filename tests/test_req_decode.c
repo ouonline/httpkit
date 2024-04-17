@@ -26,7 +26,7 @@ void test_req_decode1() {
     assert(memcmp(ref.base, "/about", 6) == 0);
 
     qbuf_ref_reset(&ref);
-    http_request_get_header(&ctx, req, "Content-Length", 14, &ref);
+    http_request_find_header(&ctx, req, "Content-Length", 14, &ref);
     assert(ref.size == 1);
     assert(memcmp(ref.base, "8", 1) == 0);
 
@@ -56,21 +56,69 @@ void test_req_decode_query() {
 
     struct qbuf_ref ref;
     qbuf_ref_reset(&ref);
-    http_request_get_query(&ctx, req, "foo", 3, &ref);
+    http_request_find_query(&ctx, req, "foo", 3, &ref);
     assert(ref.size == 3);
     assert(memcmp(ref.base, "bar", 3) == 0);
 
     qbuf_ref_reset(&ref);
-    http_request_get_query(&ctx, req, "bar", 3, &ref);
+    http_request_find_query(&ctx, req, "bar", 3, &ref);
     assert(ref.size == 3);
     assert(memcmp(ref.base, "baz", 3) == 0);
 
     qbuf_ref_reset(&ref);
-    http_request_get_query(&ctx, req, "unknown", 7, &ref);
+    http_request_find_query(&ctx, req, "unknown", 7, &ref);
     assert(ref.base == NULL);
     assert(ref.size == 0);
 
     assert(http_request_get_size(&ctx) == strlen(req));
+
+    http_request_decode_context_destroy(&ctx);
+}
+
+struct kvref {
+    struct qbuf_ref key;
+    struct qbuf_ref value;
+};
+
+/* returns 1 if found */
+static int find_key(const struct kvref* res_list, unsigned int sz, const struct qbuf_ref* key) {
+    for (unsigned int i = 0; i < sz; ++i) {
+        const struct kvref* r = &res_list[i];
+        if (key->size != r->key.size) {
+            continue;
+        }
+        if (memcmp(r->key.base, key->base, key->size) == 0) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+void test_req_decode_query_iterate() {
+    const struct kvref expected_result[] = {
+        {{"foo", 3}, {"bar", 3}},
+        {{"bar", 3}, {"baz", 3}},
+    };
+    const unsigned int expected_sz = sizeof(expected_result) / sizeof(struct kvref);
+
+    const char* req = "GET /about?foo=bar&bar=baz HTTP/1.1\r\nabc: def\r\nkkk: lll\r\n\r\n";
+
+    struct http_request_decode_context ctx;
+    http_request_decode_context_init(&ctx);
+
+    int rc = http_request_decode(&ctx, req, strlen(req));
+    assert(rc == HRC_OK);
+
+    unsigned nr_query = http_request_get_query_count(&ctx);
+    assert(nr_query == expected_sz);
+
+    unsigned int nr_found = 0;
+    for (unsigned int i = 0; i < nr_query; ++i) {
+        struct qbuf_ref key;
+        http_request_get_query(&ctx, req, i, &key, NULL);
+        nr_found += find_key(expected_result, expected_sz, &key);
+    }
+    assert(nr_found == nr_query);
 
     http_request_decode_context_destroy(&ctx);
 }
@@ -86,16 +134,50 @@ void test_req_decode_header() {
 
     struct qbuf_ref ref;
     qbuf_ref_reset(&ref);
-    http_request_get_header(&ctx, req, "abc", 3, &ref);
+    http_request_find_header(&ctx, req, "abc", 3, &ref);
     assert(ref.size == 4);
     assert(memcmp(ref.base, "defg", 4) == 0);
 
     qbuf_ref_reset(&ref);
-    http_request_get_header(&ctx, req, "foo", 3, &ref);
+    http_request_find_header(&ctx, req, "foo", 3, &ref);
     assert(ref.size == 3);
     assert(memcmp(ref.base, "bar", 3) == 0);
 
+    qbuf_ref_reset(&ref);
+    http_request_find_header(&ctx, req, "not-found", 9, &ref);
+    assert(ref.base == NULL);
+    assert(ref.size == 0);
+
     assert(http_request_get_size(&ctx) == strlen(req));
+
+    http_request_decode_context_destroy(&ctx);
+}
+
+void test_req_decode_header_iterate() {
+    const struct kvref expected_result[] = {
+        {{"abc", 3}, {"def", 3}},
+        {{"kkk", 3}, {"lll", 3}},
+    };
+    const unsigned int expected_sz = sizeof(expected_result) / sizeof(struct kvref);
+
+    const char* req = "GET /about?foo=bar&bar=baz HTTP/1.1\r\nabc: def\r\nkkk: lll\r\n\r\n";
+
+    struct http_request_decode_context ctx;
+    http_request_decode_context_init(&ctx);
+
+    int rc = http_request_decode(&ctx, req, strlen(req));
+    assert(rc == HRC_OK);
+
+    unsigned nr_header = http_request_get_header_count(&ctx);
+    assert(nr_header == expected_sz);
+
+    unsigned int nr_found = 0;
+    for (unsigned int i = 0; i < nr_header; ++i) {
+        struct qbuf_ref key;
+        http_request_get_header(&ctx, req, i, &key, NULL);
+        nr_found += find_key(expected_result, expected_sz, &key);
+    }
+    assert(nr_found == nr_header);
 
     http_request_decode_context_destroy(&ctx);
 }
@@ -123,22 +205,22 @@ void test_req_decode_more_data() {
 
     struct qbuf_ref ref;
     qbuf_ref_reset(&ref);
-    http_request_get_header(&ctx, req, "abc", 3, &ref);
+    http_request_find_header(&ctx, req, "abc", 3, &ref);
     assert(ref.size == 4);
     assert(memcmp(ref.base, "defg", 4) == 0);
 
     qbuf_ref_reset(&ref);
-    http_request_get_header(&ctx, req, "foo", 3, &ref);
+    http_request_find_header(&ctx, req, "foo", 3, &ref);
     assert(ref.size == 3);
     assert(memcmp(ref.base, "bar", 3) == 0);
 
     qbuf_ref_reset(&ref);
-    http_request_get_query(&ctx, req, "foo", 3, &ref);
+    http_request_find_query(&ctx, req, "foo", 3, &ref);
     assert(ref.size == 3);
     assert(memcmp(ref.base, "bar", 3) == 0);
 
     qbuf_ref_reset(&ref);
-    http_request_get_query(&ctx, req, "bar", 3, &ref);
+    http_request_find_query(&ctx, req, "bar", 3, &ref);
     assert(ref.size == 3);
     assert(memcmp(ref.base, "baz", 3) == 0);
 
@@ -189,7 +271,7 @@ void test_req_decode_fragment() {
 
     struct qbuf_ref ref;
     qbuf_ref_reset(&ref);
-    http_request_get_query(&ctx, req, "foo", 3, &ref);
+    http_request_find_query(&ctx, req, "foo", 3, &ref);
     assert(ref.size == 3);
     assert(memcmp(ref.base, "bar", 3) == 0);
 
@@ -217,7 +299,7 @@ void test_req_decode_fragment2() {
     assert(memcmp(ref.base, "/about", 6) == 0);
 
     qbuf_ref_reset(&ref);
-    http_request_get_header(&ctx, req, "abc", 3, &ref);
+    http_request_find_header(&ctx, req, "abc", 3, &ref);
     assert(ref.size == 4);
     assert(memcmp(ref.base, "defg", 4) == 0);
 
@@ -245,7 +327,7 @@ void test_req_decode_empty_fragment() {
     assert(memcmp(ref.base, "/about", 6) == 0);
 
     qbuf_ref_reset(&ref);
-    http_request_get_header(&ctx, req, "abc", 3, &ref);
+    http_request_find_header(&ctx, req, "abc", 3, &ref);
     assert(ref.size == 4);
     assert(memcmp(ref.base, "defg", 4) == 0);
 
@@ -272,7 +354,7 @@ void test_req_decode_empty_query() {
     assert(memcmp(ref.base, "/about", 6) == 0);
 
     qbuf_ref_reset(&ref);
-    http_request_get_header(&ctx, req, "abc", 3, &ref);
+    http_request_find_header(&ctx, req, "abc", 3, &ref);
     assert(ref.size == 4);
     assert(memcmp(ref.base, "defg", 4) == 0);
 
@@ -299,7 +381,7 @@ void test_req_decode_empty_query_and_fragment() {
     assert(memcmp(ref.base, "/about", 6) == 0);
 
     qbuf_ref_reset(&ref);
-    http_request_get_header(&ctx, req, "abc", 3, &ref);
+    http_request_find_header(&ctx, req, "abc", 3, &ref);
     assert(ref.size == 4);
     assert(memcmp(ref.base, "defg", 4) == 0);
 
@@ -313,7 +395,9 @@ void test_req_decode_empty_query_and_fragment() {
 void test_req_decode() {
     test_req_decode1();
     test_req_decode_query();
+    test_req_decode_query_iterate();
     test_req_decode_header();
+    test_req_decode_header_iterate();
     test_req_decode_more_data();
     test_req_decode_no_content_len();
     test_req_decode_invalid_content_len();
