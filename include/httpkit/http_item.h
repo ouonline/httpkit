@@ -6,8 +6,8 @@ extern "C" {
 #endif
 
 struct http_item {
-    unsigned long off;
-    unsigned long len;
+    unsigned int off;
+    unsigned int len;
 };
 
 static inline void http_item_reset(struct http_item* item) {

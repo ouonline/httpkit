@@ -64,19 +64,25 @@ static inline void http_request_get_version(struct http_request_decode_context* 
     res->size = ctx->req_line.version.len;
 }
 
-void http_request_get_query(struct http_request_decode_context*, const void* base,
-                            const char* key, unsigned int klen, struct qbuf_ref* value);
+static inline unsigned int http_request_get_query_count(struct http_request_decode_context* ctx) {
+    return cvector_size(&ctx->req_line.query_list);
+}
 
-int http_request_for_each_query(struct http_request_decode_context* ctx, const void* base,
-                                void* arg, int (*f)(void* arg, const char* key, unsigned int klen,
-                                                    const char* value, unsigned int vlen));
-
-void http_request_get_header(struct http_request_decode_context*, const void* base,
+void http_request_get_query(struct http_request_decode_context*, const void* base, unsigned int idx,
+                            struct qbuf_ref* key /* can be NULL */,
+                            struct qbuf_ref* value /* can be NULL */);
+void http_request_find_query(struct http_request_decode_context*, const void* base,
                              const char* key, unsigned int klen, struct qbuf_ref* value);
 
-int http_request_for_each_header(struct http_request_decode_context* ctx, const void* base,
-                                 void* arg, int (*f)(void* arg, const char* key, unsigned int klen,
-                                                     const char* value, unsigned int vlen));
+static inline unsigned int http_request_get_header_count(struct http_request_decode_context* ctx) {
+    return cvector_size(&ctx->header_list);
+}
+
+void http_request_get_header(struct http_request_decode_context*, const void* base, unsigned int idx,
+                             struct qbuf_ref* key /* can be NULL */,
+                             struct qbuf_ref* value /* can be NULL */);
+void http_request_find_header(struct http_request_decode_context*, const void* base,
+                              const char* key, unsigned int klen, struct qbuf_ref* value);
 
 static inline void http_request_get_content(struct http_request_decode_context* ctx,
                                             const void* base, struct qbuf_ref* res) {

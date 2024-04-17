@@ -138,8 +138,21 @@ int http_response_decode(struct http_response_decode_context* ctx, const void* b
     return HRC_OK;
 }
 
-void http_response_get_header(struct http_response_decode_context* ctx, const void* base,
-                              const char* key, unsigned int klen, struct qbuf_ref* value) {
+void http_response_get_header(struct http_response_decode_context* ctx, const void* base, unsigned int idx,
+                              struct qbuf_ref* key, struct qbuf_ref* value) {
+    struct kvpair* item = (struct kvpair*)cvector_at(&ctx->header_list, idx);
+    if (key) {
+        key->base = (const char*)base + item->key.off;
+        key->size = item->key.len;
+    }
+    if (value) {
+        value->base = (const char*)base + item->value.off;
+        value->size = item->value.len;
+    }
+}
+
+void http_response_find_header(struct http_response_decode_context* ctx, const void* base,
+                               const char* key, unsigned int klen, struct qbuf_ref* value) {
     struct kvpair* item = kvpair_vector_lookup(&ctx->header_list, base, key, klen);
     if (item) {
         value->base = (const char*)base + item->value.off;
@@ -148,10 +161,4 @@ void http_response_get_header(struct http_response_decode_context* ctx, const vo
         value->base = NULL;
         value->size = 0;
     }
-}
-
-int http_response_for_each_header(struct http_response_decode_context* ctx, const void* base,
-                                  void* arg, int (*f)(void* arg, const char* key, unsigned int klen,
-                                                      const char* value, unsigned int vlen)) {
-    return kvpair_vector_foreach(&ctx->header_list, base, arg, f);
 }
