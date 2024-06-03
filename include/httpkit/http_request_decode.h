@@ -5,15 +5,14 @@
 extern "C" {
 #endif
 
-#include "cutils/qbuf_ref.h"
 #include "cutils/cvector.h"
-#include "http_item.h"
+#include "cutils/offlen.h"
 
 struct http_request_line {
-    struct http_item method;
-    struct http_item abs_path;
-    struct http_item fragment;
-    struct http_item version;
+    struct offlen method;
+    struct offlen abs_path;
+    struct offlen fragment;
+    struct offlen version;
     struct cvector query_list; /* element type is struct kvpair */
 };
 
@@ -41,53 +40,49 @@ int http_request_decode(struct http_request_decode_context*, const void* base,
                         unsigned long len);
 
 static inline void http_request_get_method(struct http_request_decode_context* ctx,
-                                           const void* base, struct qbuf_ref* res) {
-    res->base = (const char*)base + ctx->req_line.method.off;
-    res->size = ctx->req_line.method.len;
+                                           struct offlen* res) {
+    *res = ctx->req_line.method;
 }
 
 static inline void http_request_get_abs_path(struct http_request_decode_context* ctx,
-                                             const void* base, struct qbuf_ref* res) {
-    res->base = (const char*)base + ctx->req_line.abs_path.off;
-    res->size = ctx->req_line.abs_path.len;
+                                             struct offlen* res) {
+    *res = ctx->req_line.abs_path;
 }
 
 static inline void http_request_get_fragment(struct http_request_decode_context* ctx,
-                                             const void* base, struct qbuf_ref* res) {
-    res->base = (const char*)base + ctx->req_line.fragment.off;
-    res->size = ctx->req_line.fragment.len;
+                                             struct offlen* res) {
+    *res = ctx->req_line.fragment;
 }
 
 static inline void http_request_get_version(struct http_request_decode_context* ctx,
-                                            const void* base, struct qbuf_ref* res) {
-    res->base = (const char*)base + ctx->req_line.version.off;
-    res->size = ctx->req_line.version.len;
+                                            struct offlen* res) {
+    *res = ctx->req_line.version;
 }
 
 static inline unsigned int http_request_get_query_count(struct http_request_decode_context* ctx) {
     return cvector_size(&ctx->req_line.query_list);
 }
 
-void http_request_get_query(struct http_request_decode_context*, const void* base, unsigned int idx,
-                            struct qbuf_ref* key /* can be NULL */,
-                            struct qbuf_ref* value /* can be NULL */);
+void http_request_get_query(struct http_request_decode_context*, unsigned int idx,
+                            struct offlen* key /* can be NULL */,
+                            struct offlen* value /* can be NULL */);
 void http_request_find_query(struct http_request_decode_context*, const void* base,
-                             const char* key, unsigned int klen, struct qbuf_ref* value);
+                             const char* key, unsigned int klen, struct offlen* value);
 
 static inline unsigned int http_request_get_header_count(struct http_request_decode_context* ctx) {
     return cvector_size(&ctx->header_list);
 }
 
-void http_request_get_header(struct http_request_decode_context*, const void* base, unsigned int idx,
-                             struct qbuf_ref* key /* can be NULL */,
-                             struct qbuf_ref* value /* can be NULL */);
+void http_request_get_header(struct http_request_decode_context*, unsigned int idx,
+                             struct offlen* key /* can be NULL */,
+                             struct offlen* value /* can be NULL */);
 void http_request_find_header(struct http_request_decode_context*, const void* base,
-                              const char* key, unsigned int klen, struct qbuf_ref* value);
+                              const char* key, unsigned int klen, struct offlen* value);
 
 static inline void http_request_get_content(struct http_request_decode_context* ctx,
-                                            const void* base, struct qbuf_ref* res) {
-    res->base = (const char*)base + ctx->content_offset;
-    res->size = ctx->content_length;
+                                            struct offlen* res) {
+    res->off = ctx->content_offset;
+    res->len = ctx->content_length;
 }
 
 static inline unsigned long http_request_get_size(struct http_request_decode_context* ctx) {

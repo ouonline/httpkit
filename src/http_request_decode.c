@@ -24,23 +24,23 @@ enum {
 /* ------------------------------------------------------------------------- */
 
 static void __request_line_init(struct http_request_line* line) {
-    http_item_reset(&line->method);
-    http_item_reset(&line->abs_path);
-    http_item_reset(&line->fragment);
-    http_item_reset(&line->version);
+    offlen_reset(&line->method);
+    offlen_reset(&line->abs_path);
+    offlen_reset(&line->fragment);
+    offlen_reset(&line->version);
     cvector_init(&line->query_list, sizeof(struct kvpair));
 }
 
 static void __reqeust_line_destroy(struct http_request_line* line) {
-    http_item_reset(&line->method);
-    http_item_reset(&line->abs_path);
-    http_item_reset(&line->fragment);
-    http_item_reset(&line->version);
+    offlen_reset(&line->method);
+    offlen_reset(&line->abs_path);
+    offlen_reset(&line->fragment);
+    offlen_reset(&line->version);
     cvector_destroy(&line->query_list);
 }
 
 static int __request_line_decode_method(const char* base, unsigned long len,
-                                        struct http_item* method, unsigned long* offset) {
+                                        struct offlen* method, unsigned long* offset) {
     const char* cursor = base;
     const char* end = base + len;
 
@@ -112,7 +112,7 @@ static int __request_line_decode_others(const char* base, const char* cursor, un
         case HTTP_REQ_EXPECT_QUERY: {
             int rc;
             const char* last_pos = cursor;
-            struct http_item key, value;
+            struct offlen key, value;
 
             if (*cursor == ' ') {
                 ++cursor; /* skips ' ' */
@@ -337,52 +337,44 @@ int http_request_decode(struct http_request_decode_context* ctx, const void* bas
     return HRC_OK;
 }
 
-void http_request_get_query(struct http_request_decode_context* ctx, const void* base, unsigned int idx,
-                            struct qbuf_ref* key, struct qbuf_ref* value) {
+void http_request_get_query(struct http_request_decode_context* ctx, unsigned int idx,
+                            struct offlen* key, struct offlen* value) {
     struct kvpair* item = (struct kvpair*)cvector_at(&ctx->req_line.query_list, idx);
     if (key) {
-        key->base = (const char*)base + item->key.off;
-        key->size = item->key.len;
+        *key = item->key;
     }
     if (value) {
-        value->base = (const char*)base + item->value.off;
-        value->size = item->value.len;
+        *value = item->value;
     }
 }
 
 void http_request_find_query(struct http_request_decode_context* ctx, const void* base,
-                             const char* key, unsigned int klen, struct qbuf_ref* value) {
+                             const char* key, unsigned int klen, struct offlen* value) {
     struct kvpair* item = kvpair_vector_lookup(&ctx->req_line.query_list, base, key, klen);
     if (item) {
-        value->base = (const char*)base + item->value.off;
-        value->size = item->value.len;
+        *value = item->value;
     } else {
-        value->base = NULL;
-        value->size = 0;
+        offlen_reset(value);
     }
 }
 
-void http_request_get_header(struct http_request_decode_context* ctx, const void* base, unsigned int idx,
-                             struct qbuf_ref* key, struct qbuf_ref* value) {
+void http_request_get_header(struct http_request_decode_context* ctx, unsigned int idx,
+                             struct offlen* key, struct offlen* value) {
     struct kvpair* item = (struct kvpair*)cvector_at(&ctx->header_list, idx);
     if (key) {
-        key->base = (const char*)base + item->key.off;
-        key->size = item->key.len;
+        *key = item->key;
     }
     if (value) {
-        value->base = (const char*)base + item->value.off;
-        value->size = item->value.len;
+        *value = item->value;
     }
 }
 
 void http_request_find_header(struct http_request_decode_context* ctx, const void* base,
-                              const char* key, unsigned int klen, struct qbuf_ref* value) {
+                              const char* key, unsigned int klen, struct offlen* value) {
     struct kvpair* item = kvpair_vector_lookup(&ctx->header_list, base, key, klen);
     if (item) {
-        value->base = (const char*)base + item->value.off;
-        value->size = item->value.len;
+        *value = item->value;
     } else {
-        value->base = NULL;
-        value->size = 0;
+        offlen_reset(value);
     }
 }
