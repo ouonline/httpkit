@@ -2,11 +2,11 @@
 #include "kvpair.h"
 #include <string.h>
 
-int kvpair_vector_update(struct cvector* vec, const void* base, unsigned int koff, unsigned int klen,
-                         unsigned int voff, unsigned int vlen) {
+int kvpair_vector_update(struct cvector* vec, const void* base, unsigned long koff, unsigned long klen,
+                         unsigned long voff, unsigned long vlen) {
     int ret;
-    unsigned int vec_size = cvector_size(vec);
-    for (unsigned int i = 0; i < vec_size; ++i) {
+    unsigned long vec_size = cvector_size(vec);
+    for (unsigned long i = 0; i < vec_size; ++i) {
         struct kvpair* item = (struct kvpair*)cvector_at(vec, i);
         if (item->key.len != klen) {
             continue;
@@ -40,9 +40,9 @@ int kvpair_vector_update(struct cvector* vec, const void* base, unsigned int kof
 }
 
 struct kvpair* kvpair_vector_lookup(struct cvector* vec, const void* base, const char* key,
-                                    unsigned int klen) {
-    unsigned int vec_size = cvector_size(vec);
-    for (unsigned int i = 0; i < vec_size; ++i) {
+                                    unsigned long klen) {
+    unsigned long vec_size = cvector_size(vec);
+    for (unsigned long i = 0; i < vec_size; ++i) {
         struct kvpair* item = (struct kvpair*)cvector_at(vec, i);
         if (item->key.len == klen && memcmp(key, (const char*)base + item->key.off, klen) == 0) {
             return item;

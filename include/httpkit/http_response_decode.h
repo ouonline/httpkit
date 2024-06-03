@@ -5,14 +5,13 @@
 extern "C" {
 #endif
 
-#include "cutils/qbuf_ref.h"
 #include "cutils/cvector.h"
-#include "http_item.h"
+#include "cutils/offlen.h"
 
 struct http_response_status_line {
     unsigned int code;
-    struct http_item text;
-    struct http_item version;
+    struct offlen text;
+    struct offlen version;
 };
 
 struct http_response_decode_context {
@@ -43,31 +42,29 @@ static inline unsigned int http_response_get_status_code(struct http_response_de
 }
 
 static inline void http_response_get_status_text(struct http_response_decode_context* ctx,
-                                                 const void* base, struct qbuf_ref* res) {
-    res->base = (const char*)base + ctx->status_line.text.off;
-    res->size = ctx->status_line.text.len;
+                                                 struct offlen* res) {
+    *res = ctx->status_line.text;
 }
 
 static inline void http_response_get_version(struct http_response_decode_context* ctx,
-                                             const void* base, struct qbuf_ref* res) {
-    res->base = (const char*)base + ctx->status_line.version.off;
-    res->size = ctx->status_line.version.len;
+                                             struct offlen* res) {
+    *res = ctx->status_line.version;
 }
 
 static inline unsigned int http_response_get_header_count(struct http_response_decode_context* ctx) {
     return cvector_size(&ctx->header_list);
 }
 
-void http_response_get_header(struct http_response_decode_context*, const void* base, unsigned int idx,
-                              struct qbuf_ref* key /* can be NULL */,
-                              struct qbuf_ref* value /* can be NULL */);
+void http_response_get_header(struct http_response_decode_context*, unsigned int idx,
+                              struct offlen* key /* can be NULL */,
+                              struct offlen* value /* can be NULL */);
 void http_response_find_header(struct http_response_decode_context*, const void* base,
-                               const char* key, unsigned int klen, struct qbuf_ref* value);
+                               const char* key, unsigned int klen, struct offlen* value);
 
 static inline void http_response_get_content(struct http_response_decode_context* ctx,
-                                             const void* base, struct qbuf_ref* res) {
-    res->base = (const char*)base + ctx->content_offset;
-    res->size = ctx->content_length;
+                                             struct offlen* res) {
+    res->off = ctx->content_offset;
+    res->len = ctx->content_length;
 }
 
 static inline unsigned long http_response_get_size(struct http_response_decode_context* ctx) {

@@ -18,16 +18,16 @@ void test_res_decode1() {
     unsigned int code = http_response_get_status_code(&ctx);
     assert(code == 404);
 
-    struct qbuf_ref ref;
-    qbuf_ref_reset(&ref);
-    http_response_get_status_text(&ctx, res, &ref);
-    assert(ref.size == 9);
-    assert(memcmp(ref.base, "Not Found", 9) == 0);
+    struct offlen ref;
+    offlen_reset(&ref);
+    http_response_get_status_text(&ctx, &ref);
+    assert(ref.len == 9);
+    assert(memcmp(res + ref.off, "Not Found", 9) == 0);
 
-    qbuf_ref_reset(&ref);
-    http_response_get_version(&ctx, res, &ref);
-    assert(ref.size == 8);
-    assert(memcmp(ref.base, "HTTP/1.1", 8) == 0);
+    offlen_reset(&ref);
+    http_response_get_version(&ctx, &ref);
+    assert(ref.len == 8);
+    assert(memcmp(res + ref.off, "HTTP/1.1", 8) == 0);
 
     assert(http_response_get_size(&ctx) == strlen(res));
 
@@ -46,21 +46,21 @@ void test_res_decode_header() {
     unsigned int code = http_response_get_status_code(&ctx);
     assert(code == 200);
 
-    struct qbuf_ref ref;
-    qbuf_ref_reset(&ref);
-    http_response_get_status_text(&ctx, res, &ref);
-    assert(ref.size == 2);
-    assert(memcmp(ref.base, "OK", 2) == 0);
+    struct offlen ref;
+    offlen_reset(&ref);
+    http_response_get_status_text(&ctx, &ref);
+    assert(ref.len == 2);
+    assert(memcmp(res + ref.off, "OK", 2) == 0);
 
-    qbuf_ref_reset(&ref);
+    offlen_reset(&ref);
     http_response_find_header(&ctx, res, "foo", 3, &ref);
-    assert(ref.size == 3);
-    assert(memcmp(ref.base, "bar", 3) == 0);
+    assert(ref.len == 3);
+    assert(memcmp(res + ref.off, "bar", 3) == 0);
 
-    qbuf_ref_reset(&ref);
+    offlen_reset(&ref);
     http_response_find_header(&ctx, res, "not-found", 9, &ref);
-    assert(ref.base == NULL);
-    assert(ref.size == 0);
+    assert(ref.off == 0);
+    assert(ref.len == 0);
 
     assert(http_response_get_size(&ctx) == strlen(res));
 
@@ -73,13 +73,13 @@ struct kvref {
 };
 
 /* returns 1 if found */
-static int find_key(const struct kvref* res_list, unsigned int sz, const struct qbuf_ref* key) {
+static int find_key(const struct kvref* res_list, unsigned int sz, const void* base, const struct offlen* key) {
     for (unsigned int i = 0; i < sz; ++i) {
         const struct kvref* r = &res_list[i];
-        if (key->size != r->key.size) {
+        if (key->len != r->key.size) {
             continue;
         }
-        if (memcmp(r->key.base, key->base, key->size) == 0) {
+        if (memcmp(r->key.base, (const char*)base + key->off, key->len) == 0) {
             return 1;
         }
     }
@@ -106,9 +106,9 @@ void test_res_decode_header_iterate() {
 
     unsigned int nr_found = 0;
     for (unsigned int i = 0; i < nr_header; ++i) {
-        struct qbuf_ref key;
-        http_response_get_header(&ctx, res, i, &key, NULL);
-        nr_found += find_key(expected_result, expected_sz, &key);
+        struct offlen key;
+        http_response_get_header(&ctx, i, &key, NULL);
+        nr_found += find_key(expected_result, expected_sz, res, &key);
     }
     assert(nr_found == nr_header);
 
@@ -139,16 +139,16 @@ void test_res_decode_more_data() {
     unsigned int code = http_response_get_status_code(&ctx);
     assert(code == 200);
 
-    struct qbuf_ref ref;
-    qbuf_ref_reset(&ref);
-    http_response_get_status_text(&ctx, res, &ref);
-    assert(ref.size == 2);
-    assert(memcmp(ref.base, "OK", 2) == 0);
+    struct offlen ref;
+    offlen_reset(&ref);
+    http_response_get_status_text(&ctx, &ref);
+    assert(ref.len == 2);
+    assert(memcmp(res + ref.off, "OK", 2) == 0);
 
-    qbuf_ref_reset(&ref);
+    offlen_reset(&ref);
     http_response_find_header(&ctx, res, "foo", 3, &ref);
-    assert(ref.size == 3);
-    assert(memcmp(ref.base, "bar", 3) == 0);
+    assert(ref.len == 3);
+    assert(memcmp(res + ref.off, "bar", 3) == 0);
 
     assert(http_response_get_size(&ctx) == strlen(res));
 
@@ -167,21 +167,21 @@ void test_res_decode_content() {
     unsigned int code = http_response_get_status_code(&ctx);
     assert(code == 200);
 
-    struct qbuf_ref ref;
-    qbuf_ref_reset(&ref);
-    http_response_get_status_text(&ctx, res, &ref);
-    assert(ref.size == 2);
-    assert(memcmp(ref.base, "OK", 2) == 0);
+    struct offlen ref;
+    offlen_reset(&ref);
+    http_response_get_status_text(&ctx, &ref);
+    assert(ref.len == 2);
+    assert(memcmp(res + ref.off, "OK", 2) == 0);
 
-    qbuf_ref_reset(&ref);
+    offlen_reset(&ref);
     http_response_find_header(&ctx, res, "foo", 3, &ref);
-    assert(ref.size == 3);
-    assert(memcmp(ref.base, "bar", 3) == 0);
+    assert(ref.len == 3);
+    assert(memcmp(res + ref.off, "bar", 3) == 0);
 
-    qbuf_ref_reset(&ref);
-    http_response_get_content(&ctx, res, &ref);
-    assert(ref.size == 8);
-    assert(memcmp(ref.base, "ouonline", 8) == 0);
+    offlen_reset(&ref);
+    http_response_get_content(&ctx, &ref);
+    assert(ref.len == 8);
+    assert(memcmp(res + ref.off, "ouonline", 8) == 0);
 
     assert(http_response_get_size(&ctx) == strlen(res));
 
