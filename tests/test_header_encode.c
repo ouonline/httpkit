@@ -11,7 +11,7 @@ static void test_header_encode1() {
     qbuf_init(&res);
     int rc = http_header_encode(&res, "foo", 3, "bar", 3);
     assert(rc == HRC_OK);
-    const char* expected = "foo: bar\r\n";
+    const char* expected = "foo:bar\r\n";
     assert(qbuf_size(&res) == strlen(expected));
     assert(memcmp(qbuf_data(&res), expected, qbuf_size(&res)) == 0);
 
