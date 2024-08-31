@@ -17,12 +17,21 @@ struct http_request_line {
 };
 
 struct http_request_decode_context {
-    /* public */
+    /* ----- public ----- */
+
     unsigned long content_offset;
     unsigned long content_length; /* from header `Content-Length` */
     struct http_request_line req_line;
     struct cvector header_list; /* element type is struct kvpair */
-    /* private */
+
+    /*
+      used when HRC_MORE_DATA is returned. is 0 if we cannot determine
+      exactly how many bytes are needed.
+    */
+    unsigned long bytes_needed;
+
+    /* ----- private ----- */
+
     int state;
     unsigned long offset; /* last valid pos */
 };
@@ -83,6 +92,10 @@ static inline void http_request_get_content(struct http_request_decode_context* 
                                             struct offlen* res) {
     res->off = ctx->content_offset;
     res->len = ctx->content_length;
+}
+
+static inline unsigned long http_request_get_bytes_needed(struct http_request_decode_context* ctx) {
+    return ctx->bytes_needed;
 }
 
 static inline unsigned long http_request_get_size(struct http_request_decode_context* ctx) {

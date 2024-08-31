@@ -184,7 +184,8 @@ void test_req_decode_header_iterate() {
 void test_req_decode_more_data() {
     const char* req1 = "GET /about?foo=bar&ba";
     const char* req2 = "GET /about?foo=bar&bar=baz HTTP/1.1\r";
-    const char* req3 = "GET /about?foo=bar&bar=baz HTTP/1.1\r\nabc: ";
+    const char* req3 = "GET /about?foo=bar&bar=baz HTTP/1.1\r\nabc: defg\r\nfoo: bar\r\nContent-Length: 5\r\n\r\nhe";
+    const char* req4 = "GET /about?foo=bar&bar=baz HTTP/1.1\r\nabc: defg\r\nfoo: bar\r\nContent-Length: 5\r\n\r\nhell";
     const char* req = "GET /about?foo=bar&bar=baz HTTP/1.1\r\nabc: defg\r\nfoo: bar\r\nContent-Length: 5\r\n\r\nhello";
 
     struct http_request_decode_context ctx;
@@ -195,9 +196,15 @@ void test_req_decode_more_data() {
 
     rc = http_request_decode(&ctx, req2, strlen(req2));
     assert(rc == HRC_MORE_DATA);
+    assert(ctx.bytes_needed == 0);
 
     rc = http_request_decode(&ctx, req3, strlen(req3));
     assert(rc == HRC_MORE_DATA);
+    assert(ctx.bytes_needed == 3);
+
+    rc = http_request_decode(&ctx, req4, strlen(req4));
+    assert(rc == HRC_MORE_DATA);
+    assert(ctx.bytes_needed == 1);
 
     rc = http_request_decode(&ctx, req, strlen(req));
     assert(rc == HRC_OK);
