@@ -17,23 +17,27 @@ static void __http_response_status_line_reset(struct http_response_status_line* 
     offlen_reset(&st->version);
 }
 
-int http_response_decode_context_init(struct http_response_decode_context* ctx) {
-    ctx->state = HTTP_RES_EXPECT_STATUS_LINE;
-    ctx->offset = 0;
-    __http_response_status_line_reset(&ctx->status_line);
-    cvector_init(&ctx->header_list, sizeof(struct kvpair));
+void http_response_decode_context_init(struct http_response_decode_context* ctx) {
     ctx->content_offset = 0;
     ctx->content_length = 0;
-    return 0;
+    __http_response_status_line_reset(&ctx->status_line);
+    cvector_init(&ctx->header_list, sizeof(struct kvpair));
+    ctx->state = HTTP_RES_EXPECT_STATUS_LINE;
+    ctx->offset = 0;
+}
+
+void http_response_decode_context_clear(struct http_response_decode_context* ctx) {
+    ctx->offset = 0;
+    ctx->state = HTTP_RES_EXPECT_STATUS_LINE;
+    cvector_clear(&ctx->header_list);
+    __http_response_status_line_reset(&ctx->status_line);
+    ctx->content_length = 0;
+    ctx->content_offset = 0;
 }
 
 void http_response_decode_context_destroy(struct http_response_decode_context* ctx) {
-    ctx->state = HTTP_RES_EXPECT_STATUS_LINE;
-    ctx->offset = 0;
-    __http_response_status_line_reset(&ctx->status_line);
     cvector_destroy(&ctx->header_list);
-    ctx->content_offset = 0;
-    ctx->content_length = 0;
+    __http_response_status_line_reset(&ctx->status_line);
 }
 
 /* Status-Line = HTTP-Version SP Status-Code SP Reason-Phrase CRLF */

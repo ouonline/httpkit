@@ -45,6 +45,8 @@ typedef struct http_request_decode_context HttpRequestDecodeContext;
 
 void http_request_decode_context_init(struct http_request_decode_context*);
 void http_request_decode_context_destroy(struct http_request_decode_context*);
+void http_request_decode_context_clear(struct http_request_decode_context*);
+
 int http_request_decode(struct http_request_decode_context*, const void* base,
                         unsigned long len);
 
