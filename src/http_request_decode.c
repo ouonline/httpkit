@@ -31,11 +31,15 @@ static void __request_line_init(struct http_request_line* line) {
     cvector_init(&line->query_list, sizeof(struct kvpair));
 }
 
-static void __reqeust_line_destroy(struct http_request_line* line) {
+static void __request_line_clear(struct http_request_line* line) {
     offlen_reset(&line->method);
     offlen_reset(&line->abs_path);
     offlen_reset(&line->fragment);
     offlen_reset(&line->version);
+    cvector_clear(&line->query_list);
+}
+
+static void __reqeust_line_destroy(struct http_request_line* line) {
     cvector_destroy(&line->query_list);
 }
 
@@ -257,23 +261,28 @@ static int __request_line_decode_others(const char* base, const char* cursor, un
 /* ------------------------------------------------------------------------- */
 
 void http_request_decode_context_init(struct http_request_decode_context* ctx) {
-    ctx->state = HTTP_REQ_EXPECT_METHOD;
-    ctx->offset = 0;
-    __request_line_init(&ctx->req_line);
-    cvector_init(&ctx->header_list, sizeof(struct kvpair));
     ctx->content_offset = 0;
     ctx->content_length = 0;
+    __request_line_init(&ctx->req_line);
+    cvector_init(&ctx->header_list, sizeof(struct kvpair));
     ctx->bytes_needed = 0;
+    ctx->state = HTTP_REQ_EXPECT_METHOD;
+    ctx->offset = 0;
+}
+
+void http_request_decode_context_clear(struct http_request_decode_context* ctx) {
+    ctx->offset = 0;
+    ctx->state = HTTP_REQ_EXPECT_METHOD;
+    ctx->bytes_needed = 0;
+    cvector_clear(&ctx->header_list);
+    __request_line_clear(&ctx->req_line);
+    ctx->content_length = 0;
+    ctx->content_offset = 0;
 }
 
 void http_request_decode_context_destroy(struct http_request_decode_context* ctx) {
-    ctx->state = HTTP_REQ_EXPECT_METHOD;
-    ctx->offset = 0;
-    __reqeust_line_destroy(&ctx->req_line);
     cvector_destroy(&ctx->header_list);
-    ctx->content_offset = 0;
-    ctx->content_length = 0;
-    ctx->bytes_needed = 0;
+    __reqeust_line_destroy(&ctx->req_line);
 }
 
 int http_request_decode(struct http_request_decode_context* ctx, const void* base,

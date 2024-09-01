@@ -32,8 +32,10 @@ typedef struct http_response_decode_context HttpResponseDecodeContext;
 
 /* ------------------------------------------------------------------------- */
 
-int http_response_decode_context_init(struct http_response_decode_context*);
+void http_response_decode_context_init(struct http_response_decode_context*);
 void http_response_decode_context_destroy(struct http_response_decode_context*);
+void http_response_decode_context_clear(struct http_response_decode_context*);
+
 int http_response_decode(struct http_response_decode_context*, const void* base,
                          unsigned long len);
 
