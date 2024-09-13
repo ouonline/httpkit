@@ -26,9 +26,9 @@ struct http_request_decode_context {
 
     /*
       used when HRC_MORE_DATA is returned. is 0 if we cannot determine
-      exactly how many bytes are needed.
+      exactly how many bytes are left.
     */
-    unsigned long bytes_needed;
+    unsigned long bytes_left;
 
     /* ----- private ----- */
 
@@ -96,8 +96,8 @@ static inline void http_request_get_content(struct http_request_decode_context* 
     res->len = ctx->content_length;
 }
 
-static inline unsigned long http_request_get_bytes_needed(struct http_request_decode_context* ctx) {
-    return ctx->bytes_needed;
+static inline unsigned long http_request_get_bytes_left(struct http_request_decode_context* ctx) {
+    return ctx->bytes_left;
 }
 
 static inline unsigned long http_request_get_size(struct http_request_decode_context* ctx) {

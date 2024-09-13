@@ -196,15 +196,15 @@ void test_req_decode_more_data() {
 
     rc = http_request_decode(&ctx, req2, strlen(req2));
     assert(rc == HRC_MORE_DATA);
-    assert(ctx.bytes_needed == 0);
+    assert(ctx.bytes_left == 0);
 
     rc = http_request_decode(&ctx, req3, strlen(req3));
     assert(rc == HRC_MORE_DATA);
-    assert(ctx.bytes_needed == 3);
+    assert(ctx.bytes_left == 3);
 
     rc = http_request_decode(&ctx, req4, strlen(req4));
     assert(rc == HRC_MORE_DATA);
-    assert(ctx.bytes_needed == 1);
+    assert(ctx.bytes_left == 1);
 
     rc = http_request_decode(&ctx, req, strlen(req));
     assert(rc == HRC_OK);

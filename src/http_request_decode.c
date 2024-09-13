@@ -265,7 +265,7 @@ void http_request_decode_context_init(struct http_request_decode_context* ctx) {
     ctx->content_length = 0;
     __request_line_init(&ctx->req_line);
     cvector_init(&ctx->header_list, sizeof(struct kvpair));
-    ctx->bytes_needed = 0;
+    ctx->bytes_left = 0;
     ctx->state = HTTP_REQ_EXPECT_METHOD;
     ctx->offset = 0;
 }
@@ -273,7 +273,7 @@ void http_request_decode_context_init(struct http_request_decode_context* ctx) {
 void http_request_decode_context_clear(struct http_request_decode_context* ctx) {
     ctx->offset = 0;
     ctx->state = HTTP_REQ_EXPECT_METHOD;
-    ctx->bytes_needed = 0;
+    ctx->bytes_left = 0;
     cvector_clear(&ctx->header_list);
     __request_line_clear(&ctx->req_line);
     ctx->content_length = 0;
@@ -337,7 +337,7 @@ int http_request_decode(struct http_request_decode_context* ctx, const void* bas
         }
         case HTTP_REQ_EXPECT_CONTENT: {
             if (len < ctx->content_length) {
-                ctx->bytes_needed = ctx->content_length - len;
+                ctx->bytes_left = ctx->content_length - len;
                 return HRC_MORE_DATA;
             }
             ctx->content_offset = ctx->offset;
