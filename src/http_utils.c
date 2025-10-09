@@ -85,9 +85,11 @@ static const struct http_response_status g_http_status[] = {
     {505, "505", 3, "HTTP Version not supported", 26},
 };
 
-static const unsigned int g_http_status_num = sizeof(g_http_status) / sizeof(struct http_response_status);
+static const unsigned int g_http_status_num =
+    sizeof(g_http_status) / sizeof(struct http_response_status);
 
-const struct http_response_status* http_response_status_lookup(unsigned int code) {
+const struct http_response_status* http_response_status_lookup(
+    unsigned int code) {
     unsigned int low = 0, high = g_http_status_num - 1;
     while (low <= high) {
         unsigned int mid = (low + high) / 2;

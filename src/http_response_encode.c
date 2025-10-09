@@ -10,8 +10,8 @@ int http_response_encode_status_line(struct qbuf* res, unsigned int code,
     char code_str[MAX_CODE_LEN + 1];
     int code_len = snprintf(code_str, MAX_CODE_LEN + 1, " %u ", code);
 
-    int ret = qbuf_reserve(res, HTTP_VERSION_STR_LEN + text_len + MAX_CODE_LEN +
-                           2 /* "\r\n" */);
+    int ret = qbuf_reserve(
+        res, HTTP_VERSION_STR_LEN + text_len + MAX_CODE_LEN + 2 /* "\r\n" */);
     if (ret != 0) {
         return HRC_NOMEM;
     }
@@ -24,7 +24,8 @@ int http_response_encode_status_line(struct qbuf* res, unsigned int code,
     return HRC_OK;
 }
 
-int http_response_encode_header(struct qbuf* res, const char* key, unsigned int klen,
-                                const char* value, unsigned int vlen) {
+int http_response_encode_header(struct qbuf* res, const char* key,
+                                unsigned int klen, const char* value,
+                                unsigned int vlen) {
     return http_header_encode(res, key, klen, value, vlen);
 }

@@ -50,57 +50,65 @@ void http_request_decode_context_clear(struct http_request_decode_context*);
 int http_request_decode(struct http_request_decode_context*, const void* base,
                         unsigned long len);
 
-static inline void http_request_get_method(struct http_request_decode_context* ctx,
-                                           struct offlen* res) {
+static inline void http_request_get_method(
+    struct http_request_decode_context* ctx, struct offlen* res) {
     *res = ctx->req_line.method;
 }
 
-static inline void http_request_get_abs_path(struct http_request_decode_context* ctx,
-                                             struct offlen* res) {
+static inline void http_request_get_abs_path(
+    struct http_request_decode_context* ctx, struct offlen* res) {
     *res = ctx->req_line.abs_path;
 }
 
-static inline void http_request_get_fragment(struct http_request_decode_context* ctx,
-                                             struct offlen* res) {
+static inline void http_request_get_fragment(
+    struct http_request_decode_context* ctx, struct offlen* res) {
     *res = ctx->req_line.fragment;
 }
 
-static inline void http_request_get_version(struct http_request_decode_context* ctx,
-                                            struct offlen* res) {
+static inline void http_request_get_version(
+    struct http_request_decode_context* ctx, struct offlen* res) {
     *res = ctx->req_line.version;
 }
 
-static inline unsigned int http_request_get_query_count(struct http_request_decode_context* ctx) {
+static inline unsigned int http_request_get_query_count(
+    struct http_request_decode_context* ctx) {
     return cvector_size(&ctx->req_line.query_list);
 }
 
-void http_request_get_query(struct http_request_decode_context*, unsigned int idx,
+void http_request_get_query(struct http_request_decode_context*,
+                            unsigned int idx,
                             struct offlen* key /* can be NULL */,
                             struct offlen* value /* can be NULL */);
-void http_request_find_query(struct http_request_decode_context*, const void* base,
-                             const char* key, unsigned int klen, struct offlen* value);
+void http_request_find_query(struct http_request_decode_context*,
+                             const void* base, const char* key,
+                             unsigned int klen, struct offlen* value);
 
-static inline unsigned int http_request_get_header_count(struct http_request_decode_context* ctx) {
+static inline unsigned int http_request_get_header_count(
+    struct http_request_decode_context* ctx) {
     return cvector_size(&ctx->header_list);
 }
 
-void http_request_get_header(struct http_request_decode_context*, unsigned int idx,
+void http_request_get_header(struct http_request_decode_context*,
+                             unsigned int idx,
                              struct offlen* key /* can be NULL */,
                              struct offlen* value /* can be NULL */);
-void http_request_find_header(struct http_request_decode_context*, const void* base,
-                              const char* key, unsigned int klen, struct offlen* value);
+void http_request_find_header(struct http_request_decode_context*,
+                              const void* base, const char* key,
+                              unsigned int klen, struct offlen* value);
 
-static inline void http_request_get_content(struct http_request_decode_context* ctx,
-                                            struct offlen* res) {
+static inline void http_request_get_content(
+    struct http_request_decode_context* ctx, struct offlen* res) {
     res->off = ctx->content_offset;
     res->len = ctx->content_length;
 }
 
-static inline unsigned long http_request_get_bytes_left(struct http_request_decode_context* ctx) {
+static inline unsigned long http_request_get_bytes_left(
+    struct http_request_decode_context* ctx) {
     return ctx->bytes_left;
 }
 
-static inline unsigned long http_request_get_size(struct http_request_decode_context* ctx) {
+static inline unsigned long http_request_get_size(
+    struct http_request_decode_context* ctx) {
     return ctx->offset;
 }
 

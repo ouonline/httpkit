@@ -6,7 +6,8 @@
 #include <string.h>
 
 void test_req_decode1() {
-    const char* req = "GET /about HTTP/1.1\r\nContent-Length: 8\r\n\r\nouonline";
+    const char* req =
+        "GET /about HTTP/1.1\r\nContent-Length: 8\r\n\r\nouonline";
 
     struct http_request_decode_context ctx;
     http_request_decode_context_init(&ctx);
@@ -45,7 +46,8 @@ void test_req_decode1() {
 }
 
 void test_req_decode_query() {
-    const char* req = "GET /about?foo=bar&bar=baz HTTP/1.1\r\nContent-Length: 0\r\n\r\n";
+    const char* req =
+        "GET /about?foo=bar&bar=baz HTTP/1.1\r\nContent-Length: 0\r\n\r\n";
 
     struct http_request_decode_context ctx;
     http_request_decode_context_init(&ctx);
@@ -80,7 +82,8 @@ struct kvref {
 };
 
 /* returns 1 if found */
-static int find_key(const struct kvref* res_list, unsigned int sz, const void* base, const struct offlen* key) {
+static int find_key(const struct kvref* res_list, unsigned int sz,
+                    const void* base, const struct offlen* key) {
     for (unsigned int i = 0; i < sz; ++i) {
         const struct kvref* r = &res_list[i];
         if (key->len != r->key.size) {
@@ -98,9 +101,11 @@ void test_req_decode_query_iterate() {
         {{"foo", 3}, {"bar", 3}},
         {{"bar", 3}, {"baz", 3}},
     };
-    const unsigned int expected_sz = sizeof(expected_result) / sizeof(struct kvref);
+    const unsigned int expected_sz =
+        sizeof(expected_result) / sizeof(struct kvref);
 
-    const char* req = "GET /about?foo=bar&bar=baz HTTP/1.1\r\nabc: def\r\nkkk: lll\r\n\r\n";
+    const char* req =
+        "GET /about?foo=bar&bar=baz HTTP/1.1\r\nabc: def\r\nkkk: lll\r\n\r\n";
 
     struct http_request_decode_context ctx;
     http_request_decode_context_init(&ctx);
@@ -123,7 +128,8 @@ void test_req_decode_query_iterate() {
 }
 
 void test_req_decode_header() {
-    const char* req = "GET /about?foo=bar&bar=baz HTTP/1.1\r\nabc: defg\r\nfoo: bar\r\n\r\n";
+    const char* req =
+        "GET /about?foo=bar&bar=baz HTTP/1.1\r\nabc: defg\r\nfoo: bar\r\n\r\n";
 
     struct http_request_decode_context ctx;
     http_request_decode_context_init(&ctx);
@@ -157,9 +163,11 @@ void test_req_decode_header_iterate() {
         {{"abc", 3}, {"def", 3}},
         {{"kkk", 3}, {"lll", 3}},
     };
-    const unsigned int expected_sz = sizeof(expected_result) / sizeof(struct kvref);
+    const unsigned int expected_sz =
+        sizeof(expected_result) / sizeof(struct kvref);
 
-    const char* req = "GET /about?foo=bar&bar=baz HTTP/1.1\r\nabc: def\r\nkkk: lll\r\n\r\n";
+    const char* req =
+        "GET /about?foo=bar&bar=baz HTTP/1.1\r\nabc: def\r\nkkk: lll\r\n\r\n";
 
     struct http_request_decode_context ctx;
     http_request_decode_context_init(&ctx);
@@ -184,9 +192,15 @@ void test_req_decode_header_iterate() {
 void test_req_decode_more_data() {
     const char* req1 = "GET /about?foo=bar&ba";
     const char* req2 = "GET /about?foo=bar&bar=baz HTTP/1.1\r";
-    const char* req3 = "GET /about?foo=bar&bar=baz HTTP/1.1\r\nabc: defg\r\nfoo: bar\r\nContent-Length: 5\r\n\r\nhe";
-    const char* req4 = "GET /about?foo=bar&bar=baz HTTP/1.1\r\nabc: defg\r\nfoo: bar\r\nContent-Length: 5\r\n\r\nhell";
-    const char* req = "GET /about?foo=bar&bar=baz HTTP/1.1\r\nabc: defg\r\nfoo: bar\r\nContent-Length: 5\r\n\r\nhello";
+    const char* req3 =
+        "GET /about?foo=bar&bar=baz HTTP/1.1\r\nabc: defg\r\nfoo: "
+        "bar\r\nContent-Length: 5\r\n\r\nhe";
+    const char* req4 =
+        "GET /about?foo=bar&bar=baz HTTP/1.1\r\nabc: defg\r\nfoo: "
+        "bar\r\nContent-Length: 5\r\n\r\nhell";
+    const char* req =
+        "GET /about?foo=bar&bar=baz HTTP/1.1\r\nabc: defg\r\nfoo: "
+        "bar\r\nContent-Length: 5\r\n\r\nhello";
 
     struct http_request_decode_context ctx;
     http_request_decode_context_init(&ctx);
@@ -241,7 +255,8 @@ void test_req_decode_more_data() {
 }
 
 void test_req_decode_no_content_len() {
-    const char* req = "GET /about?foo=bar&bar=baz HTTP/1.1\r\nabc: defg\r\nfoo: bar\r\n\r\n";
+    const char* req =
+        "GET /about?foo=bar&bar=baz HTTP/1.1\r\nabc: defg\r\nfoo: bar\r\n\r\n";
 
     struct http_request_decode_context ctx;
     http_request_decode_context_init(&ctx);
@@ -255,7 +270,9 @@ void test_req_decode_no_content_len() {
 }
 
 void test_req_decode_invalid_content_len() {
-    const char* req = "GET /about?foo=bar&bar=baz HTTP/1.1\r\nabc: defg\r\nContent-Length: 111\r\n\r\n";
+    const char* req =
+        "GET /about?foo=bar&bar=baz HTTP/1.1\r\nabc: defg\r\nContent-Length: "
+        "111\r\n\r\n";
 
     struct http_request_decode_context ctx;
     http_request_decode_context_init(&ctx);
@@ -267,7 +284,8 @@ void test_req_decode_invalid_content_len() {
 }
 
 void test_req_decode_fragment() {
-    const char* req = "GET /about?foo=bar&bar=baz#anchor HTTP/1.1\r\nabc: defg\r\n\r\n";
+    const char* req =
+        "GET /about?foo=bar&bar=baz#anchor HTTP/1.1\r\nabc: defg\r\n\r\n";
 
     struct http_request_decode_context ctx;
     http_request_decode_context_init(&ctx);

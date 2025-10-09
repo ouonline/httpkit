@@ -117,7 +117,8 @@ void test_header_decode_spaces_between_colon_and_value() {
 
     unsigned long offset = 0;
 
-    const char* hdr = "  \t   ou \t\t\t :  \t  \t ouonline\r\nfoo:\t\t\tbar\r\n\r\n";
+    const char* hdr =
+        "  \t   ou \t\t\t :  \t  \t ouonline\r\nfoo:\t\t\tbar\r\n\r\n";
     int rc = http_header_decode(hdr, strlen(hdr), hdr, &hdr_list, &offset);
     assert(rc == HRC_OK);
     assert(offset == strlen(hdr));
@@ -145,7 +146,9 @@ void test_header_decode_spaces_after_value() {
 
     unsigned long offset = 0;
 
-    const char* hdr = "  \t   ou \t\t\t :  \t  \t ouonline   \t\r\nfoo:\t\t\tbar\t\t\t \t\t\t\r\n\r\n";
+    const char* hdr =
+        "  \t   ou \t\t\t :  \t  \t ouonline   \t\r\nfoo:\t\t\tbar\t\t\t "
+        "\t\t\t\r\n\r\n";
     int rc = http_header_decode(hdr, strlen(hdr), hdr, &hdr_list, &offset);
     assert(rc == HRC_OK);
     assert(offset == strlen(hdr));
@@ -193,10 +196,12 @@ void test_header_decode_spaces_in_value() {
     int rc = http_header_decode(hdr, strlen(hdr), hdr, &hdr_list, &offset);
     assert(rc == HRC_OK);
 
-    struct kvpair* item = kvpair_vector_lookup(&hdr_list, hdr, "Accept-Encoding", 15);
+    struct kvpair* item =
+        kvpair_vector_lookup(&hdr_list, hdr, "Accept-Encoding", 15);
     assert(item != NULL);
     assert(item->value.len == 19);
-    assert(memcmp(hdr + item->value.off, "gzip, json, deflate", item->value.len) == 0);
+    assert(memcmp(hdr + item->value.off, "gzip, json, deflate",
+                  item->value.len) == 0);
 
     cvector_destroy(&hdr_list);
 }

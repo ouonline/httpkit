@@ -12,7 +12,8 @@ void test_res_encode1() {
     struct qbuf res;
     qbuf_init(&res);
 
-    int rc = http_response_encode_status_line(&res, st->code, st->text_str, st->text_len);
+    int rc = http_response_encode_status_line(&res, st->code, st->text_str,
+                                              st->text_len);
     assert(rc == HRC_OK);
     rc = http_response_encode_head_end(&res);
     assert(rc == HRC_OK);

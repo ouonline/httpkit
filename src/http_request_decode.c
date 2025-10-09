@@ -44,7 +44,8 @@ static void __reqeust_line_destroy(struct http_request_line* line) {
 }
 
 static int __request_line_decode_method(const char* base, unsigned long len,
-                                        struct offlen* method, unsigned long* offset) {
+                                        struct offlen* method,
+                                        unsigned long* offset) {
     const char* cursor = base;
     const char* end = base + len;
 
@@ -65,8 +66,10 @@ static int __request_line_decode_method(const char* base, unsigned long len,
   Request-Line = Method SP Request-URI SP HTTP-Version CRLF
   Request-URI = scheme ":" hier-part [ "?" query ] [ "#" fragment ]
 */
-static int __request_line_decode_others(const char* base, const char* cursor, unsigned long len,
-                                        struct http_request_line* l, int* state, unsigned long* offset) {
+static int __request_line_decode_others(const char* base, const char* cursor,
+                                        unsigned long len,
+                                        struct http_request_line* l, int* state,
+                                        unsigned long* offset) {
     const char* end = cursor + len;
 
     switch (*state) {
@@ -162,8 +165,8 @@ static int __request_line_decode_others(const char* base, const char* cursor, un
                 }
                 if (*cursor == ' ') {
                     value.len = cursor - base - value.off;
-                    rc = kvpair_vector_update(&l->query_list, base, key.off, key.len,
-                                              value.off, value.len);
+                    rc = kvpair_vector_update(&l->query_list, base, key.off,
+                                              key.len, value.off, value.len);
                     if (rc != HRC_OK) {
                         return rc;
                     }
@@ -177,8 +180,8 @@ static int __request_line_decode_others(const char* base, const char* cursor, un
                 }
                 if (*cursor == '&') {
                     value.len = cursor - base - value.off;
-                    rc = kvpair_vector_update(&l->query_list, base, key.off, key.len,
-                                              value.off, value.len);
+                    rc = kvpair_vector_update(&l->query_list, base, key.off,
+                                              key.len, value.off, value.len);
                     if (rc != HRC_OK) {
                         return rc;
                     }
@@ -191,8 +194,8 @@ static int __request_line_decode_others(const char* base, const char* cursor, un
                 }
                 if (*cursor == '#') {
                     value.len = cursor - base - value.off;
-                    rc = kvpair_vector_update(&l->query_list, base, key.off, key.len,
-                                              value.off, value.len);
+                    rc = kvpair_vector_update(&l->query_list, base, key.off,
+                                              key.len, value.off, value.len);
                     if (rc != HRC_OK) {
                         return rc;
                     }
@@ -270,7 +273,8 @@ void http_request_decode_context_init(struct http_request_decode_context* ctx) {
     ctx->offset = 0;
 }
 
-void http_request_decode_context_clear(struct http_request_decode_context* ctx) {
+void http_request_decode_context_clear(
+    struct http_request_decode_context* ctx) {
     ctx->offset = 0;
     ctx->state = HTTP_REQ_EXPECT_METHOD;
     ctx->bytes_left = 0;
@@ -280,13 +284,14 @@ void http_request_decode_context_clear(struct http_request_decode_context* ctx) 
     ctx->content_offset = 0;
 }
 
-void http_request_decode_context_destroy(struct http_request_decode_context* ctx) {
+void http_request_decode_context_destroy(
+    struct http_request_decode_context* ctx) {
     cvector_destroy(&ctx->header_list);
     __reqeust_line_destroy(&ctx->req_line);
 }
 
-int http_request_decode(struct http_request_decode_context* ctx, const void* base,
-                        unsigned long len) {
+int http_request_decode(struct http_request_decode_context* ctx,
+                        const void* base, unsigned long len) {
     const char* data = (const char*)base;
 
     if (ctx->state == HTTP_REQ_EXPECT_END) {
@@ -299,7 +304,8 @@ int http_request_decode(struct http_request_decode_context* ctx, const void* bas
     switch (ctx->state) {
         case HTTP_REQ_EXPECT_METHOD: {
             unsigned long parsed_len = 0;
-            int rc = __request_line_decode_method(data, len, &ctx->req_line.method, &parsed_len);
+            int rc = __request_line_decode_method(
+                data, len, &ctx->req_line.method, &parsed_len);
             len -= parsed_len;
             data += parsed_len;
             ctx->offset += parsed_len;
@@ -313,8 +319,8 @@ int http_request_decode(struct http_request_decode_context* ctx, const void* bas
         case HTTP_REQ_EXPECT_FRAGMENT:
         case HTTP_REQ_EXPECT_VERSION: {
             unsigned long parsed_len = 0;
-            int rc = __request_line_decode_others(base, data, len, &ctx->req_line,
-                                                  &ctx->state, &parsed_len);
+            int rc = __request_line_decode_others(
+                base, data, len, &ctx->req_line, &ctx->state, &parsed_len);
             len -= parsed_len;
             data += parsed_len;
             ctx->offset += parsed_len;
@@ -325,7 +331,8 @@ int http_request_decode(struct http_request_decode_context* ctx, const void* bas
         }
         case HTTP_REQ_EXPECT_HEADER: {
             unsigned long parsed_len = 0;
-            int rc = http_header_decode(data, len, base, &ctx->header_list, &parsed_len);
+            int rc = http_header_decode(data, len, base, &ctx->header_list,
+                                        &parsed_len);
             len -= parsed_len;
             ctx->offset += parsed_len;
             if (rc != HRC_OK) {
@@ -349,9 +356,11 @@ int http_request_decode(struct http_request_decode_context* ctx, const void* bas
     return HRC_OK;
 }
 
-void http_request_get_query(struct http_request_decode_context* ctx, unsigned int idx,
-                            struct offlen* key, struct offlen* value) {
-    struct kvpair* item = (struct kvpair*)cvector_at(&ctx->req_line.query_list, idx);
+void http_request_get_query(struct http_request_decode_context* ctx,
+                            unsigned int idx, struct offlen* key,
+                            struct offlen* value) {
+    struct kvpair* item =
+        (struct kvpair*)cvector_at(&ctx->req_line.query_list, idx);
     if (key) {
         *key = item->key;
     }
@@ -360,9 +369,11 @@ void http_request_get_query(struct http_request_decode_context* ctx, unsigned in
     }
 }
 
-void http_request_find_query(struct http_request_decode_context* ctx, const void* base,
-                             const char* key, unsigned int klen, struct offlen* value) {
-    struct kvpair* item = kvpair_vector_lookup(&ctx->req_line.query_list, base, key, klen);
+void http_request_find_query(struct http_request_decode_context* ctx,
+                             const void* base, const char* key,
+                             unsigned int klen, struct offlen* value) {
+    struct kvpair* item =
+        kvpair_vector_lookup(&ctx->req_line.query_list, base, key, klen);
     if (item) {
         *value = item->value;
     } else {
@@ -370,8 +381,9 @@ void http_request_find_query(struct http_request_decode_context* ctx, const void
     }
 }
 
-void http_request_get_header(struct http_request_decode_context* ctx, unsigned int idx,
-                             struct offlen* key, struct offlen* value) {
+void http_request_get_header(struct http_request_decode_context* ctx,
+                             unsigned int idx, struct offlen* key,
+                             struct offlen* value) {
     struct kvpair* item = (struct kvpair*)cvector_at(&ctx->header_list, idx);
     if (key) {
         *key = item->key;
@@ -381,9 +393,11 @@ void http_request_get_header(struct http_request_decode_context* ctx, unsigned i
     }
 }
 
-void http_request_find_header(struct http_request_decode_context* ctx, const void* base,
-                              const char* key, unsigned int klen, struct offlen* value) {
-    struct kvpair* item = kvpair_vector_lookup(&ctx->header_list, base, key, klen);
+void http_request_find_header(struct http_request_decode_context* ctx,
+                              const void* base, const char* key,
+                              unsigned int klen, struct offlen* value) {
+    struct kvpair* item =
+        kvpair_vector_lookup(&ctx->header_list, base, key, klen);
     if (item) {
         *value = item->value;
     } else {

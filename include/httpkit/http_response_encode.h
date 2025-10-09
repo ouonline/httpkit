@@ -11,8 +11,9 @@ extern "C" {
 int http_response_encode_status_line(struct qbuf* res, unsigned int code,
                                      const char* text, unsigned int text_len);
 
-int http_response_encode_header(struct qbuf* res, const char* key, unsigned int klen,
-                                const char* value, unsigned int vlen);
+int http_response_encode_header(struct qbuf* res, const char* key,
+                                unsigned int klen, const char* value,
+                                unsigned int vlen);
 
 static inline int http_response_encode_head_end(struct qbuf* res) {
     int ret = qbuf_append(res, "\r\n", 2);

@@ -11,13 +11,15 @@ enum {
     HTTP_RES_EXPECT_END,
 };
 
-static void __http_response_status_line_reset(struct http_response_status_line* st) {
+static void __http_response_status_line_reset(
+    struct http_response_status_line* st) {
     st->code = 0;
     offlen_reset(&st->text);
     offlen_reset(&st->version);
 }
 
-void http_response_decode_context_init(struct http_response_decode_context* ctx) {
+void http_response_decode_context_init(
+    struct http_response_decode_context* ctx) {
     ctx->content_offset = 0;
     ctx->content_length = 0;
     __http_response_status_line_reset(&ctx->status_line);
@@ -26,7 +28,8 @@ void http_response_decode_context_init(struct http_response_decode_context* ctx)
     ctx->offset = 0;
 }
 
-void http_response_decode_context_clear(struct http_response_decode_context* ctx) {
+void http_response_decode_context_clear(
+    struct http_response_decode_context* ctx) {
     ctx->offset = 0;
     ctx->state = HTTP_RES_EXPECT_STATUS_LINE;
     cvector_clear(&ctx->header_list);
@@ -35,7 +38,8 @@ void http_response_decode_context_clear(struct http_response_decode_context* ctx
     ctx->content_offset = 0;
 }
 
-void http_response_decode_context_destroy(struct http_response_decode_context* ctx) {
+void http_response_decode_context_destroy(
+    struct http_response_decode_context* ctx) {
     cvector_destroy(&ctx->header_list);
     __http_response_status_line_reset(&ctx->status_line);
 }
@@ -94,8 +98,8 @@ static int __status_line_decode(const char* base, unsigned long len,
     return HRC_RES_LINE; /* unreachable */
 }
 
-int http_response_decode(struct http_response_decode_context* ctx, const void* base,
-                         unsigned long len) {
+int http_response_decode(struct http_response_decode_context* ctx,
+                         const void* base, unsigned long len) {
     const char* data = (const char*)base;
 
     if (ctx->state == HTTP_RES_EXPECT_END) {
@@ -108,7 +112,8 @@ int http_response_decode(struct http_response_decode_context* ctx, const void* b
     switch (ctx->state) {
         case HTTP_RES_EXPECT_STATUS_LINE: {
             unsigned long parsed_len = 0;
-            int rc = __status_line_decode(data, len, &ctx->status_line, &parsed_len);
+            int rc =
+                __status_line_decode(data, len, &ctx->status_line, &parsed_len);
             len -= parsed_len;
             data += parsed_len;
             ctx->offset += parsed_len;
@@ -119,7 +124,8 @@ int http_response_decode(struct http_response_decode_context* ctx, const void* b
         }
         case HTTP_RES_EXPECT_HEADER: {
             unsigned long parsed_len = 0;
-            int rc = http_header_decode(data, len, base, &ctx->header_list, &parsed_len);
+            int rc = http_header_decode(data, len, base, &ctx->header_list,
+                                        &parsed_len);
             len -= parsed_len;
             ctx->offset += parsed_len;
             if (rc != HRC_OK) {
@@ -142,8 +148,9 @@ int http_response_decode(struct http_response_decode_context* ctx, const void* b
     return HRC_OK;
 }
 
-void http_response_get_header(struct http_response_decode_context* ctx, unsigned int idx,
-                              struct offlen* key, struct offlen* value) {
+void http_response_get_header(struct http_response_decode_context* ctx,
+                              unsigned int idx, struct offlen* key,
+                              struct offlen* value) {
     struct kvpair* item = (struct kvpair*)cvector_at(&ctx->header_list, idx);
     if (key) {
         *key = item->key;
@@ -153,9 +160,11 @@ void http_response_get_header(struct http_response_decode_context* ctx, unsigned
     }
 }
 
-void http_response_find_header(struct http_response_decode_context* ctx, const void* base,
-                               const char* key, unsigned int klen, struct offlen* value) {
-    struct kvpair* item = kvpair_vector_lookup(&ctx->header_list, base, key, klen);
+void http_response_find_header(struct http_response_decode_context* ctx,
+                               const void* base, const char* key,
+                               unsigned int klen, struct offlen* value) {
+    struct kvpair* item =
+        kvpair_vector_lookup(&ctx->header_list, base, key, klen);
     if (item) {
         *value = item->value;
     } else {

@@ -8,11 +8,13 @@ extern "C" {
 #include "cutils/qbuf.h"
 #include "http_retcode.h"
 
-int http_request_encode_request_line(struct qbuf* res, const char* method, unsigned int method_len,
-                                     const char* url, unsigned int url_len);
+int http_request_encode_request_line(struct qbuf* res, const char* method,
+                                     unsigned int method_len, const char* url,
+                                     unsigned int url_len);
 
-int http_request_encode_header(struct qbuf* res, const char* key, unsigned int klen,
-                               const char* value, unsigned int vlen);
+int http_request_encode_header(struct qbuf* res, const char* key,
+                               unsigned int klen, const char* value,
+                               unsigned int vlen);
 
 static inline int http_request_encode_head_end(struct qbuf* res) {
     int ret = qbuf_append(res, "\r\n", 2);

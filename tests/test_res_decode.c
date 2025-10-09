@@ -35,7 +35,8 @@ void test_res_decode1() {
 }
 
 void test_res_decode_header() {
-    const char* res = "HTTP/1.1 200 OK\r\nfoo  : bar\r\nContent-Length: 0\r\n\r\n";
+    const char* res =
+        "HTTP/1.1 200 OK\r\nfoo  : bar\r\nContent-Length: 0\r\n\r\n";
 
     struct http_response_decode_context ctx;
     http_response_decode_context_init(&ctx);
@@ -73,7 +74,8 @@ struct kvref {
 };
 
 /* returns 1 if found */
-static int find_key(const struct kvref* res_list, unsigned int sz, const void* base, const struct offlen* key) {
+static int find_key(const struct kvref* res_list, unsigned int sz,
+                    const void* base, const struct offlen* key) {
     for (unsigned int i = 0; i < sz; ++i) {
         const struct kvref* r = &res_list[i];
         if (key->len != r->key.size) {
@@ -91,9 +93,11 @@ void test_res_decode_header_iterate() {
         {{"foo", 3}, {"bar", 3}},
         {{"Content-Length", CONTENT_LENGTH_LEN}, {"0", 1}},
     };
-    const unsigned int expected_sz = sizeof(expected_result) / sizeof(struct kvref);
+    const unsigned int expected_sz =
+        sizeof(expected_result) / sizeof(struct kvref);
 
-    const char* res = "HTTP/1.1 200 OK\r\nfoo  : bar\r\nContent-Length: 0\r\n\r\n";
+    const char* res =
+        "HTTP/1.1 200 OK\r\nfoo  : bar\r\nContent-Length: 0\r\n\r\n";
 
     struct http_response_decode_context ctx;
     http_response_decode_context_init(&ctx);
@@ -119,7 +123,8 @@ void test_res_decode_more_data() {
     const char* res1 = "HTTP/1.1 20";
     const char* res2 = "HTTP/1.1 200 OK\r\nfo";
     const char* res3 = "HTTP/1.1 200 OK\r\nfoo: bar\r";
-    const char* res = "HTTP/1.1 200 OK\r\nfoo: bar\r\nContent-Length: 0\r\n\r\n";
+    const char* res =
+        "HTTP/1.1 200 OK\r\nfoo: bar\r\nContent-Length: 0\r\n\r\n";
 
     struct http_response_decode_context ctx;
     http_response_decode_context_init(&ctx);
@@ -156,7 +161,8 @@ void test_res_decode_more_data() {
 }
 
 void test_res_decode_content() {
-    const char* res = "HTTP/1.1 200 OK\r\nfoo  : bar\r\nContent-Length: 8\r\n\r\nouonline";
+    const char* res =
+        "HTTP/1.1 200 OK\r\nfoo  : bar\r\nContent-Length: 8\r\n\r\nouonline";
 
     struct http_response_decode_context ctx;
     http_response_decode_context_init(&ctx);

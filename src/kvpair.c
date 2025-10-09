@@ -2,7 +2,8 @@
 #include "kvpair.h"
 #include <string.h>
 
-int kvpair_vector_update(struct cvector* vec, const void* base, unsigned long koff, unsigned long klen,
+int kvpair_vector_update(struct cvector* vec, const void* base,
+                         unsigned long koff, unsigned long klen,
                          unsigned long voff, unsigned long vlen) {
     int ret;
     unsigned long vec_size = cvector_size(vec);
@@ -11,7 +12,8 @@ int kvpair_vector_update(struct cvector* vec, const void* base, unsigned long ko
         if (item->key.len != klen) {
             continue;
         }
-        if (memcmp((const char*)base + koff, (const char*)base + item->key.off, klen) != 0) {
+        if (memcmp((const char*)base + koff, (const char*)base + item->key.off,
+                   klen) != 0) {
             continue;
         }
 
@@ -21,14 +23,16 @@ int kvpair_vector_update(struct cvector* vec, const void* base, unsigned long ko
     }
 
     struct kvpair new_item = {
-        .key = {
-            .off = koff,
-            .len = klen,
-        },
-        .value = {
-            .off = voff,
-            .len = vlen,
-        },
+        .key =
+            {
+                .off = koff,
+                .len = klen,
+            },
+        .value =
+            {
+                .off = voff,
+                .len = vlen,
+            },
     };
 
     ret = cvector_push_back(vec, struct kvpair, new_item);
@@ -39,12 +43,13 @@ int kvpair_vector_update(struct cvector* vec, const void* base, unsigned long ko
     return HRC_OK;
 }
 
-struct kvpair* kvpair_vector_lookup(struct cvector* vec, const void* base, const char* key,
-                                    unsigned long klen) {
+struct kvpair* kvpair_vector_lookup(struct cvector* vec, const void* base,
+                                    const char* key, unsigned long klen) {
     unsigned long vec_size = cvector_size(vec);
     for (unsigned long i = 0; i < vec_size; ++i) {
         struct kvpair* item = (struct kvpair*)cvector_at(vec, i);
-        if (item->key.len == klen && memcmp(key, (const char*)base + item->key.off, klen) == 0) {
+        if (item->key.len == klen &&
+            memcmp(key, (const char*)base + item->key.off, klen) == 0) {
             return item;
         }
     }

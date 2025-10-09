@@ -21,7 +21,8 @@ struct http_response_status {
 typedef struct http_response_status HttpResponseStatus;
 #endif
 
-const struct http_response_status* http_response_status_lookup(unsigned int code);
+const struct http_response_status* http_response_status_lookup(
+    unsigned int code);
 
 #ifdef __cplusplus
 }

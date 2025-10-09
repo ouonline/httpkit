@@ -16,6 +16,6 @@ int main(void) {
     test_header_encode();
     test_header_decode();
     test_url_decode();
-    printf("All tests were passed.\n");
+    printf("All tests are passed.\n");
     return 0;
 }

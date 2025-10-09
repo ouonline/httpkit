@@ -13,11 +13,12 @@ struct kvpair {
     struct offlen value;
 };
 
-int kvpair_vector_update(struct cvector*, const void* base, unsigned long koff, unsigned long klen,
-                         unsigned long voff, unsigned long vlen);
+int kvpair_vector_update(struct cvector*, const void* base, unsigned long koff,
+                         unsigned long klen, unsigned long voff,
+                         unsigned long vlen);
 
-struct kvpair* kvpair_vector_lookup(struct cvector*, const void* base, const char* key,
-                                    unsigned long klen);
+struct kvpair* kvpair_vector_lookup(struct cvector*, const void* base,
+                                    const char* key, unsigned long klen);
 
 #ifdef __cplusplus
 }
