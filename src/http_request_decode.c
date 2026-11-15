@@ -57,6 +57,9 @@ static int __request_line_decode_method(const char* base, unsigned long len,
         }
     }
     method->len = cursor - base;
+    if (method->len == 0) {
+        return HRC_HEADER;
+    }
 
     *offset += (method->len + 1);
     return HRC_OK;
@@ -71,6 +74,10 @@ static int __request_line_decode_others(const char* base, const char* cursor,
                                         struct http_request_line* l, int* state,
                                         unsigned long* offset) {
     const char* end = cursor + len;
+
+    if (len == 0) {
+        return HRC_MORE_DATA;
+    }
 
     switch (*state) {
         case HTTP_REQ_EXPECT_ABS_PATH: {
@@ -118,8 +125,18 @@ static int __request_line_decode_others(const char* base, const char* cursor,
         HTTP_REQ_EXPECT_QUERY:
         case HTTP_REQ_EXPECT_QUERY: {
             int rc;
-            const char* last_pos = cursor;
             struct offlen key, value;
+
+            /* skips empty pairs */
+            while (*cursor == '&') {
+                ++cursor;
+                ++(*offset);
+                if (cursor == end) {
+                    return HRC_MORE_DATA;
+                }
+            }
+
+            const char* last_pos = cursor;
 
             if (*cursor == ' ') {
                 ++cursor; /* skips ' ' */
@@ -146,6 +163,20 @@ static int __request_line_decode_others(const char* base, const char* cursor,
                 if (*cursor == '=') {
                     break;
                 }
+                if (*cursor == '&') { /* key without value */
+                    key.len = cursor - base - key.off;
+                    rc = kvpair_vector_update(&l->query_list, base, key.off,
+                                              key.len, cursor - base, 0);
+                    if (rc != HRC_OK) {
+                        return rc;
+                    }
+                    ++cursor; /* skips '&' */
+                    (*offset) += (cursor - last_pos);
+                    if (cursor == end) {
+                        return HRC_MORE_DATA;
+                    }
+                    goto HTTP_REQ_EXPECT_QUERY;
+                }
             }
             key.len = cursor - base - key.off;
 
@@ -156,7 +187,6 @@ static int __request_line_decode_others(const char* base, const char* cursor,
 
             value.off = cursor - base;
             while (1) {
-                ++cursor;
                 if (cursor == end) {
                     return HRC_MORE_DATA;
                 }
@@ -207,6 +237,7 @@ static int __request_line_decode_others(const char* base, const char* cursor,
                     }
                     goto HTTP_REQ_EXPECT_FRAGMENT;
                 }
+                ++cursor;
             }
         }
         HTTP_REQ_EXPECT_FRAGMENT:
@@ -249,6 +280,11 @@ static int __request_line_decode_others(const char* base, const char* cursor,
                     if (*cursor == '\n') {
                         l->version.off = last_pos - base;
                         l->version.len = cursor - 1 - base - l->version.off;
+                        if (l->version.len != HTTP_VERSION_STR_LEN ||
+                            memcmp(base + l->version.off, HTTP_VERSION_STR,
+                                   HTTP_VERSION_STR_LEN) != 0) {
+                            return HRC_HEADER;
+                        }
                         (*offset) += (cursor + 1 - last_pos);
                         return HRC_OK;
                     }
@@ -298,6 +334,10 @@ int http_request_decode(struct http_request_decode_context* ctx,
         return HRC_OK;
     }
 
+    if (len == 0) {
+        return HRC_MORE_DATA;
+    }
+
     data += ctx->offset;
     len -= ctx->offset;
 
@@ -339,7 +379,10 @@ int http_request_decode(struct http_request_decode_context* ctx,
                 return rc;
             }
 
-            set_content_len(base, &ctx->header_list, &ctx->content_length);
+            rc = set_content_len(base, &ctx->header_list, &ctx->content_length);
+            if (rc != HRC_OK) {
+                return rc;
+            }
             ctx->state = HTTP_REQ_EXPECT_CONTENT;
         }
         case HTTP_REQ_EXPECT_CONTENT: {
@@ -347,6 +390,7 @@ int http_request_decode(struct http_request_decode_context* ctx,
                 ctx->bytes_left = ctx->content_length - len;
                 return HRC_MORE_DATA;
             }
+            ctx->bytes_left = 0;
             ctx->content_offset = ctx->offset;
             ctx->offset += ctx->content_length;
             ctx->state = HTTP_REQ_EXPECT_END;
@@ -396,8 +440,8 @@ void http_request_get_header(struct http_request_decode_context* ctx,
 void http_request_find_header(struct http_request_decode_context* ctx,
                               const void* base, const char* key,
                               unsigned int klen, struct offlen* value) {
-    struct kvpair* item =
-        kvpair_vector_lookup(&ctx->header_list, base, key, klen);
+    struct kvpair* item = kvpair_vector_lookup_case_insensitive(
+        &ctx->header_list, base, key, klen);
     if (item) {
         *value = item->value;
     } else {

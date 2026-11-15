@@ -1,25 +1,28 @@
 #include "httpkit/http_utils.h"
 #include "httpkit/http_retcode.h"
 #include "cutils/str_utils.h"
+#include <ctype.h>
 #include <stddef.h> /* NULL */
 
 int http_url_decode(const char* src, unsigned int src_size, struct qbuf* buf) {
-    int err = qbuf_resize(buf, src_size * 3);
-    if (err) {
+    if (qbuf_reserve(buf, src_size) != 0) {
         return HRC_NOMEM;
     }
 
+    qbuf_clear(buf);
+
     char* dst_cursor = qbuf_data(buf);
     const char* src_end = src + src_size;
-    const char* dst_end = dst_cursor + qbuf_size(buf);
 
-    while (src < src_end && dst_cursor < dst_end) {
+    while (src < src_end) {
         if (*src == '+') {
             *dst_cursor = ' ';
             ++src;
         } else if (*src == '%') {
             ++src;
-            if (src_end < src + 2) {
+            if (src_end - src < 2 || !isxdigit((unsigned char)src[0]) ||
+                !isxdigit((unsigned char)src[1])) {
+                qbuf_clear(buf);
                 return HRC_URL;
             }
 
@@ -91,6 +94,11 @@ static const unsigned int g_http_status_num =
 const struct http_response_status* http_response_status_lookup(
     unsigned int code) {
     unsigned int low = 0, high = g_http_status_num - 1;
+
+    if (code < g_http_status[low].code) {
+        return NULL;
+    }
+
     while (low <= high) {
         unsigned int mid = (low + high) / 2;
         unsigned int mid_code = g_http_status[mid].code;

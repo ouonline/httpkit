@@ -1,7 +1,7 @@
 static const char* g_retcode_str[] = {
     "OK",
 
-    "out of mmeory",
+    "out of memory",
     "invalid header",
     "unsupported or invalid status code",
     "invalid content length",

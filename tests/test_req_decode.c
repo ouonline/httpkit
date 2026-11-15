@@ -1,5 +1,6 @@
 #undef NDEBUG
 #include <assert.h>
+#include <stdio.h>
 
 #include "httpkit/http_retcode.h"
 #include "httpkit/http_request_decode.h"
@@ -416,18 +417,243 @@ void test_req_decode_empty_query_and_fragment() {
     http_request_decode_context_destroy(&ctx);
 }
 
+void test_req_decode_query_empty_value() {
+    const char* req = "GET /about?foo=&bar=baz HTTP/1.1\r\n\r\n";
+
+    struct http_request_decode_context ctx;
+    http_request_decode_context_init(&ctx);
+
+    int rc = http_request_decode(&ctx, req, strlen(req));
+    assert(rc == HRC_OK);
+    assert(http_request_get_query_count(&ctx) == 2);
+
+    struct offlen ref;
+    offlen_reset(&ref);
+    http_request_find_query(&ctx, req, "foo", 3, &ref);
+    assert(ref.off != 0);
+    assert(ref.len == 0);
+
+    offlen_reset(&ref);
+    http_request_find_query(&ctx, req, "bar", 3, &ref);
+    assert(ref.len == 3);
+    assert(memcmp(req + ref.off, "baz", 3) == 0);
+
+    http_request_decode_context_destroy(&ctx);
+}
+
+void test_req_decode_query_without_value() {
+    const char* req = "GET /about?foo&bar=baz HTTP/1.1\r\n\r\n";
+
+    struct http_request_decode_context ctx;
+    http_request_decode_context_init(&ctx);
+
+    int rc = http_request_decode(&ctx, req, strlen(req));
+    assert(rc == HRC_OK);
+    assert(http_request_get_query_count(&ctx) == 2);
+
+    struct offlen ref;
+    offlen_reset(&ref);
+    http_request_find_query(&ctx, req, "foo", 3, &ref);
+    assert(ref.off != 0);
+    assert(ref.len == 0);
+
+    offlen_reset(&ref);
+    http_request_find_query(&ctx, req, "bar", 3, &ref);
+    assert(ref.len == 3);
+    assert(memcmp(req + ref.off, "baz", 3) == 0);
+
+    http_request_decode_context_destroy(&ctx);
+}
+
+void test_req_decode_query_empty_pair() {
+    const char* req = "GET /about?&foo=bar HTTP/1.1\r\n\r\n";
+
+    struct http_request_decode_context ctx;
+    http_request_decode_context_init(&ctx);
+
+    int rc = http_request_decode(&ctx, req, strlen(req));
+    assert(rc == HRC_OK);
+    assert(http_request_get_query_count(&ctx) == 1);
+
+    struct offlen ref;
+    offlen_reset(&ref);
+    http_request_find_query(&ctx, req, "foo", 3, &ref);
+    assert(ref.len == 3);
+    assert(memcmp(req + ref.off, "bar", 3) == 0);
+
+    http_request_decode_context_destroy(&ctx);
+}
+
+void test_req_decode_content_len_case_insensitive() {
+    const char* req = "POST /x HTTP/1.1\r\ncontent-length: 5\r\n\r\nhello";
+
+    struct http_request_decode_context ctx;
+    http_request_decode_context_init(&ctx);
+
+    int rc = http_request_decode(&ctx, req, strlen(req));
+    assert(rc == HRC_OK);
+    assert(ctx.content_length == 5);
+    assert(http_request_get_size(&ctx) == strlen(req));
+
+    struct offlen ref;
+    http_request_get_content(&ctx, &ref);
+    assert(ref.len == 5);
+    assert(memcmp(req + ref.off, "hello", 5) == 0);
+
+    http_request_decode_context_destroy(&ctx);
+}
+
+static void assert_req_content_len_rejected(const char* value) {
+    char req[256];
+    int n =
+        snprintf(req, sizeof(req),
+                 "POST /x HTTP/1.1\r\nContent-Length: %s\r\n\r\nhello", value);
+    assert(n > 0 && n < (int)sizeof(req));
+
+    struct http_request_decode_context ctx;
+    http_request_decode_context_init(&ctx);
+
+    int rc = http_request_decode(&ctx, req, (unsigned long)n);
+    assert(rc == HRC_CONTENTLEN);
+
+    http_request_decode_context_destroy(&ctx);
+}
+
+void test_req_decode_invalid_content_len_value() {
+    assert_req_content_len_rejected("abc");
+    assert_req_content_len_rejected("-1");
+    assert_req_content_len_rejected("+5");
+    assert_req_content_len_rejected("5, 5");
+    assert_req_content_len_rejected("999999999999999999999999999999");
+}
+
+void test_req_decode_duplicate_content_len() {
+    const char* req =
+        "POST /x HTTP/1.1\r\nContent-Length: 5\r\nContent-Length: "
+        "6\r\n\r\nhello!";
+
+    struct http_request_decode_context ctx;
+    http_request_decode_context_init(&ctx);
+
+    int rc = http_request_decode(&ctx, req, strlen(req));
+    assert(rc == HRC_CONTENTLEN);
+
+    http_request_decode_context_destroy(&ctx);
+}
+
+void test_req_decode_find_header_case_insensitive() {
+    const char* req = "GET / HTTP/1.1\r\nContent-Length: 0\r\n\r\n";
+
+    struct http_request_decode_context ctx;
+    http_request_decode_context_init(&ctx);
+
+    int rc = http_request_decode(&ctx, req, strlen(req));
+    assert(rc == HRC_OK);
+
+    struct offlen ref;
+    offlen_reset(&ref);
+    http_request_find_header(&ctx, req, "content-length", 14, &ref);
+    assert(ref.len == 1);
+    assert(memcmp(req + ref.off, "0", 1) == 0);
+
+    http_request_decode_context_destroy(&ctx);
+}
+
+void test_req_decode_bytes_left_after_success() {
+    const char* req3 = "GET /x HTTP/1.1\r\nContent-Length: 5\r\n\r\nhe";
+    const char* req = "GET /x HTTP/1.1\r\nContent-Length: 5\r\n\r\nhello";
+
+    struct http_request_decode_context ctx;
+    http_request_decode_context_init(&ctx);
+
+    int rc = http_request_decode(&ctx, req3, strlen(req3));
+    assert(rc == HRC_MORE_DATA);
+    assert(http_request_get_bytes_left(&ctx) == 3);
+
+    rc = http_request_decode(&ctx, req, strlen(req));
+    assert(rc == HRC_OK);
+    assert(http_request_get_bytes_left(&ctx) == 0);
+
+    http_request_decode_context_destroy(&ctx);
+}
+
+void test_req_decode_zero_length() {
+    struct http_request_decode_context ctx;
+    http_request_decode_context_init(&ctx);
+
+    int rc = http_request_decode(&ctx, "", 0);
+    assert(rc == HRC_MORE_DATA);
+
+    http_request_decode_context_destroy(&ctx);
+}
+
+static void assert_req_repeated_more_data(const char* req) {
+    struct http_request_decode_context ctx;
+    http_request_decode_context_init(&ctx);
+
+    unsigned long len = strlen(req);
+    int rc = http_request_decode(&ctx, req, len);
+    assert(rc == HRC_MORE_DATA);
+
+    /* No new data; the decoder should not read past the end of the buffer. */
+    rc = http_request_decode(&ctx, req, len);
+    assert(rc == HRC_MORE_DATA);
+
+    http_request_decode_context_destroy(&ctx);
+}
+
+void test_req_decode_zero_length_at_boundaries() {
+    assert_req_repeated_more_data("GET ");
+    assert_req_repeated_more_data("GET /about?");
+    assert_req_repeated_more_data("GET /about#");
+    assert_req_repeated_more_data("GET /about ");
+    assert_req_repeated_more_data("GET /about?foo=bar&");
+    assert_req_repeated_more_data("GET /about?foo=bar#");
+    assert_req_repeated_more_data("GET /about?foo=bar ");
+    assert_req_repeated_more_data("GET /about?foo=bar#frag ");
+}
+
+void test_req_decode_invalid_request_line() {
+    const char* cases[] = {
+        " / HTTP/1.1\r\n\r\n",
+        "GET / NOTHTTP\r\n\r\n",
+    };
+    const unsigned int nr_cases = sizeof(cases) / sizeof(cases[0]);
+
+    for (unsigned int i = 0; i < nr_cases; ++i) {
+        struct http_request_decode_context ctx;
+        http_request_decode_context_init(&ctx);
+
+        int rc = http_request_decode(&ctx, cases[i], strlen(cases[i]));
+        assert(rc == HRC_HEADER);
+
+        http_request_decode_context_destroy(&ctx);
+    }
+}
+
 void test_req_decode() {
     test_req_decode1();
     test_req_decode_query();
     test_req_decode_query_iterate();
+    test_req_decode_query_empty_value();
+    test_req_decode_query_without_value();
+    test_req_decode_query_empty_pair();
     test_req_decode_header();
     test_req_decode_header_iterate();
+    test_req_decode_find_header_case_insensitive();
     test_req_decode_more_data();
+    test_req_decode_bytes_left_after_success();
     test_req_decode_no_content_len();
     test_req_decode_invalid_content_len();
+    test_req_decode_invalid_content_len_value();
+    test_req_decode_duplicate_content_len();
+    test_req_decode_content_len_case_insensitive();
     test_req_decode_fragment();
     test_req_decode_fragment2();
     test_req_decode_empty_fragment();
     test_req_decode_empty_query();
     test_req_decode_empty_query_and_fragment();
+    test_req_decode_zero_length();
+    test_req_decode_zero_length_at_boundaries();
+    test_req_decode_invalid_request_line();
 }

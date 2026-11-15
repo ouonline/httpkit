@@ -1,6 +1,30 @@
 #include "httpkit/http_retcode.h"
+#include "def.h"
 #include "kvpair.h"
 #include "http_header_decode.h"
+#include <string.h>
+
+static int __check_content_len_conflict(
+    const char* base, struct cvector* kvpair_list, unsigned long key_off,
+    unsigned long key_len, unsigned long value_off, unsigned long value_len) {
+    if (key_len != CONTENT_LENGTH_LEN ||
+        memcmp(base + key_off, CONTENT_LENGTH_STR, CONTENT_LENGTH_LEN) != 0) {
+        return HRC_OK;
+    }
+
+    struct kvpair* item = kvpair_vector_lookup(
+        kvpair_list, base, CONTENT_LENGTH_STR, CONTENT_LENGTH_LEN);
+    if (item == NULL) {
+        return HRC_OK;
+    }
+
+    if (item->value.len != value_len ||
+        memcmp(base + item->value.off, base + value_off, value_len) != 0) {
+        return HRC_CONTENTLEN;
+    }
+
+    return HRC_OK;
+}
 
 int http_header_decode(const char* data, unsigned long len, const char* base,
                        struct cvector* kvpair_list, unsigned long* offset) {
@@ -62,8 +86,12 @@ HEADER_ITEM_BEGIN:
     if (cursor == end) {
         return HRC_MORE_DATA;
     }
-    if (*cursor == '\r' || *cursor == '\n') {
+    if (*cursor == '\n') {
         return HRC_HEADER;
+    }
+    if (*cursor == '\r') {
+        value_off = cursor - base;
+        goto HEADER_ITEM_r; /* empty value */
     }
     if (*cursor != ' ' && *cursor != '\t') {
         value_off = cursor - base;
@@ -76,11 +104,14 @@ HEADER_ITEM_BEGIN:
         if (cursor == end) {
             return HRC_MORE_DATA;
         }
-        if (*cursor == '\r' || *cursor == '\n') {
+        if (*cursor == '\n') {
             return HRC_HEADER;
         }
     } while (*cursor == ' ' || *cursor == '\t');
     value_off = cursor - base;
+    if (*cursor == '\r') {
+        goto HEADER_ITEM_r; /* empty value */
+    }
 
 HEADER_ITEM_VALUE:
     const char* last_non_space = cursor;
@@ -101,6 +132,7 @@ HEADER_ITEM_VALUE:
         }
     }
 
+HEADER_ITEM_r:
     /* HEADER_ITEM_r */
     ++cursor;
     if (cursor == end) {
@@ -111,6 +143,12 @@ HEADER_ITEM_VALUE:
     }
 
     /* HEADER_ITEM_END */
+    rc = __check_content_len_conflict(base, kvpair_list, key_off, key_len,
+                                      value_off, value_len);
+    if (rc != HRC_OK) {
+        return rc;
+    }
+
     rc = kvpair_vector_update(kvpair_list, (void*)base, key_off, key_len,
                               value_off, value_len);
     if (rc != HRC_OK) {

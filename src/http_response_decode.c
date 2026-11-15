@@ -52,15 +52,24 @@ static int __status_line_decode(const char* base, unsigned long len,
     const char* end = base + len;
 
     l->version.off = 0;
-    while (*cursor != ' ') {
-        ++cursor;
+    while (1) {
         if (cursor == end) {
             return HRC_MORE_DATA;
         }
+        if (*cursor == ' ') {
+            break;
+        }
+        ++cursor;
     }
     l->version.len = cursor - base;
+    if (l->version.len != HTTP_VERSION_STR_LEN ||
+        memcmp(base + l->version.off, HTTP_VERSION_STR, HTTP_VERSION_STR_LEN) !=
+            0) {
+        return HRC_RES_LINE;
+    }
 
     ++cursor; /* skips ' ' */
+    const char* code_start = cursor;
     l->code = 0;
     while (1) {
         if (cursor == end) {
@@ -70,10 +79,13 @@ static int __status_line_decode(const char* base, unsigned long len,
             break;
         }
         if (*cursor < '0' || *cursor > '9') {
-            return HRC_RES_LINE;
+            return HRC_STATUS_CODE;
         }
         l->code = l->code * 10 + (*cursor - '0');
         ++cursor;
+    }
+    if (cursor - code_start != 3 || l->code < 100) {
+        return HRC_STATUS_CODE;
     }
 
     l->text.off = cursor + 1 - base;
@@ -132,7 +144,13 @@ int http_response_decode(struct http_response_decode_context* ctx,
                 return rc;
             }
 
-            set_content_len(base, &ctx->header_list, &ctx->content_length);
+            /* 1xx, 204 and 304 responses never carry a message body. */
+            if (ctx->status_line.code / 100 == 1 ||
+                ctx->status_line.code == 204 || ctx->status_line.code == 304) {
+                ctx->content_length = 0;
+            } else {
+                set_content_len(base, &ctx->header_list, &ctx->content_length);
+            }
             ctx->state = HTTP_RES_EXPECT_CONTENT;
         }
         case HTTP_RES_EXPECT_CONTENT: {

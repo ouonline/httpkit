@@ -25,6 +25,13 @@ void test_res_encode1() {
     qbuf_destroy(&res);
 }
 
+static void test_res_encode_status_lookup_lower_bound() {
+    assert(http_response_status_lookup(0) == NULL);
+    assert(http_response_status_lookup(99) == NULL);
+    assert(http_response_status_lookup(100) != NULL);
+}
+
 void test_res_encode() {
     test_res_encode1();
+    test_res_encode_status_lookup_lower_bound();
 }

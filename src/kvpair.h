@@ -20,6 +20,11 @@ int kvpair_vector_update(struct cvector*, const void* base, unsigned long koff,
 struct kvpair* kvpair_vector_lookup(struct cvector*, const void* base,
                                     const char* key, unsigned long klen);
 
+struct kvpair* kvpair_vector_lookup_case_insensitive(struct cvector*,
+                                                     const void* base,
+                                                     const char* key,
+                                                     unsigned long klen);
+
 #ifdef __cplusplus
 }
 #endif

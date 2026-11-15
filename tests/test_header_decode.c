@@ -258,6 +258,64 @@ void test_header_decode_more_data2() {
     cvector_destroy(&hdr_list);
 }
 
+void test_header_decode_empty_value() {
+    struct cvector hdr_list;
+    cvector_init(&hdr_list, sizeof(struct kvpair));
+
+    unsigned long offset = 0;
+
+    const char* hdr = "X-Foo:\r\nX-Bar: baz\r\n\r\n";
+    int rc = http_header_decode(hdr, strlen(hdr), hdr, &hdr_list, &offset);
+    assert(rc == HRC_OK);
+    assert(offset == strlen(hdr));
+
+    struct kvpair* h = kvpair_vector_lookup(&hdr_list, hdr, "X-Foo", 5);
+    assert(h != NULL);
+    assert(h->value.len == 0);
+
+    h = kvpair_vector_lookup(&hdr_list, hdr, "X-Bar", 5);
+    assert(h != NULL);
+    assert(h->value.len == 3);
+    assert(memcmp(hdr + h->value.off, "baz", 3) == 0);
+
+    cvector_destroy(&hdr_list);
+}
+
+void test_header_decode_empty_value_with_spaces() {
+    struct cvector hdr_list;
+    cvector_init(&hdr_list, sizeof(struct kvpair));
+
+    unsigned long offset = 0;
+
+    const char* hdr = "X-Foo: \t \r\n\r\n";
+    int rc = http_header_decode(hdr, strlen(hdr), hdr, &hdr_list, &offset);
+    assert(rc == HRC_OK);
+    assert(offset == strlen(hdr));
+
+    struct kvpair* h = kvpair_vector_lookup(&hdr_list, hdr, "X-Foo", 5);
+    assert(h != NULL);
+    assert(h->value.len == 0);
+
+    cvector_destroy(&hdr_list);
+}
+
+void test_header_decode_content_len_case_insensitive() {
+    struct cvector hdr_list;
+    cvector_init(&hdr_list, sizeof(struct kvpair));
+
+    unsigned long content_len = 0;
+    unsigned long offset = 0;
+
+    const char* hdr = "content-length: 8\r\n\r\n";
+    int rc = http_header_decode(hdr, strlen(hdr), hdr, &hdr_list, &offset);
+    assert(rc == HRC_OK);
+
+    set_content_len(hdr, &hdr_list, &content_len);
+    assert(content_len == 8);
+
+    cvector_destroy(&hdr_list);
+}
+
 void test_header_decode() {
     test_header_decode1();
     test_header_decode_multi();
@@ -266,9 +324,12 @@ void test_header_decode() {
     test_header_decode_spaces_between_colon_and_value();
     test_header_decode_spaces_after_value();
     test_header_decode_content_len();
+    test_header_decode_content_len_case_insensitive();
     test_header_decode_spaces_in_value();
     test_header_decode_empty();
     test_header_decode_empty2();
+    test_header_decode_empty_value();
+    test_header_decode_empty_value_with_spaces();
     test_header_decode_more_data();
     test_header_decode_more_data2();
 }

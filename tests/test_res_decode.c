@@ -194,10 +194,73 @@ void test_res_decode_content() {
     http_response_decode_context_destroy(&ctx);
 }
 
+void test_res_decode_no_body_status() {
+    const char* res304 =
+        "HTTP/1.1 304 Not Modified\r\nContent-Length: 5\r\n\r\n";
+
+    struct http_response_decode_context ctx;
+    http_response_decode_context_init(&ctx);
+
+    int rc = http_response_decode(&ctx, res304, strlen(res304));
+    assert(rc == HRC_OK);
+    assert(http_response_get_size(&ctx) == strlen(res304));
+
+    http_response_decode_context_destroy(&ctx);
+
+    const char* res204 = "HTTP/1.1 204 No Content\r\nContent-Length: 5\r\n\r\n";
+
+    http_response_decode_context_init(&ctx);
+
+    rc = http_response_decode(&ctx, res204, strlen(res204));
+    /* A no-body status must never wait for a body. */
+    assert(rc != HRC_MORE_DATA);
+    assert(rc != HRC_OK || http_response_get_size(&ctx) == strlen(res204));
+
+    http_response_decode_context_destroy(&ctx);
+}
+
+void test_res_decode_zero_length() {
+    struct http_response_decode_context ctx;
+    http_response_decode_context_init(&ctx);
+
+    int rc = http_response_decode(&ctx, "", 0);
+    assert(rc == HRC_MORE_DATA);
+
+    http_response_decode_context_destroy(&ctx);
+}
+
+void test_res_decode_invalid_status_line() {
+    const char* res = "NOTHTTP 200 OK\r\n\r\n";
+
+    struct http_response_decode_context ctx;
+    http_response_decode_context_init(&ctx);
+
+    int rc = http_response_decode(&ctx, res, strlen(res));
+    assert(rc == HRC_RES_LINE);
+
+    http_response_decode_context_destroy(&ctx);
+}
+
+void test_res_decode_invalid_status_code() {
+    const char* res = "HTTP/1.1 0 X\r\n\r\n";
+
+    struct http_response_decode_context ctx;
+    http_response_decode_context_init(&ctx);
+
+    int rc = http_response_decode(&ctx, res, strlen(res));
+    assert(rc == HRC_STATUS_CODE);
+
+    http_response_decode_context_destroy(&ctx);
+}
+
 void test_res_decode() {
     test_res_decode1();
     test_res_decode_header();
     test_res_decode_header_iterate();
     test_res_decode_more_data();
     test_res_decode_content();
+    test_res_decode_no_body_status();
+    test_res_decode_zero_length();
+    test_res_decode_invalid_status_line();
+    test_res_decode_invalid_status_code();
 }
